@@ -29,6 +29,8 @@
             text-align: center;
             box-sizing: border-box;
             max-width: 100%;
+            -webkit-appearance: none; /* ช่วยรีเซ็ตหน้าตากล่องเริ่มต้นของ iOS */
+            appearance: none;
         }
         
         /* บังคับจัดตัวอักษรและเวลาให้อยู่กึ่งกลางอย่างปลอดภัยบน iOS Safari และ Android */
@@ -70,6 +72,7 @@
         </svg>
     </button>
 
+    <!-- STREAMING_CHUNK: Rendering main container with optimized input styling for iOS... -->
     <main class="w-full max-w-md space-y-8">
          
         <!-- Header -->
@@ -117,8 +120,8 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <!-- ห่อหุ้มกล่องด้วย div แบบ overflow-hidden เพื่อป้องกัน layout ทะลุด้านข้างขวาบน iOS -->
-                    <div class="w-full overflow-hidden">
+                    <!-- ใส่ pr-4 เพื่อบีบระยะขอบขวาของกล่องกรอกเวลาให้หดเข้ามา ไม่ล้นขอบจอไอโฟน -->
+                    <div class="w-full overflow-hidden pr-4">
                         <input type="time" id="manualStart" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
@@ -132,8 +135,8 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <!-- ห่อหุ้มกล่องด้วย div แบบ overflow-hidden เพื่อป้องกัน layout ทะลุด้านข้างขวาบน iOS -->
-                    <div class="w-full overflow-hidden">
+                    <!-- ใส่ pr-4 เพื่อบีบระยะขอบขวาของกล่องกรอกเวลาให้หดเข้ามา ไม่ล้นขอบจอไอโฟน -->
+                    <div class="w-full overflow-hidden pr-4">
                         <input type="time" id="manualEnd" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
@@ -145,6 +148,7 @@
             </button>
         </section>
 
+        <!-- STREAMING_CHUNK: Rendering history sessions and initialization logic... -->
         <!-- ประวัติการใช้งาน (History) -->
         <section class="space-y-4 pt-2">
             <div class="flex justify-between items-center">
