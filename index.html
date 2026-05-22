@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meditation Timer | บันทึกการนั่งสมาธิ</title>
     <!-- นำเข้า Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,10 +44,10 @@
         }
     </style>
     <script>
-        // ฟังก์ชันเริ่มทำงานเพื่อเช็คธีมล่าสุดก่อนที่หน้าเว็บจะแสดงผล (ป้องกันหน้าจอกระพริบ)
+        // บังคับให้เริ่มการทำงานด้วยโหมดสว่างเป็นหน้าหลัก (ไม่เปิดตามโหมดมืดของระบบเครื่องโดยอัตโนมัติ)
+        // จะสลับเป็นโหมดมืดก็ต่อเมื่อตรวจพบการบันทึกค่าที่ผู้ใช้เปิดด้วยตัวเองเท่านั้น
         (function() {
-            const isDark = localStorage.getItem('darkMode') === 'enabled' || 
-                (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            const isDark = localStorage.getItem('darkMode') === 'enabled';
             if (isDark) {
                 document.documentElement.classList.add('dark');
             } else {
@@ -109,7 +109,7 @@
              
             <div class="space-y-5">
                 <!-- เวลาเริ่ม -->
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2 overflow-hidden">
                     <div class="flex justify-between items-center">
                         <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาเริ่ม</label>
                         <!-- ปุ่ม "เพิ่มเวลาตอนนี้" -->
@@ -117,13 +117,14 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <div>
+                    <!-- ห่อหุ้มกล่องด้วย div แบบ overflow-hidden เพื่อป้องกัน layout ทะลุด้านข้างขวาบน iOS -->
+                    <div class="w-full overflow-hidden">
                         <input type="time" id="manualStart" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
                  
                 <!-- เวลาสิ้นสุด -->
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2 overflow-hidden">
                     <div class="flex justify-between items-center">
                         <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาสิ้นสุด</label>
                         <!-- ปุ่ม "เพิ่มเวลาตอนนี้" -->
@@ -131,7 +132,8 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <div>
+                    <!-- ห่อหุ้มกล่องด้วย div แบบ overflow-hidden เพื่อป้องกัน layout ทะลุด้านข้างขวาบน iOS -->
+                    <div class="w-full overflow-hidden">
                         <input type="time" id="manualEnd" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
