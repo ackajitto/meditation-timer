@@ -15,85 +15,88 @@
         }
         @keyframes breathe {
             0%, 100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
-            50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 25px 15px rgba(56, 189, 248, 0.2); }
+            50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 30px 20px rgba(56, 189, 248, 0.25); }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col items-center py-8 px-4 sm:px-6">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
 
-    <main class="w-full max-w-md space-y-6">
+    <main class="w-full max-w-md space-y-8">
         
         <!-- Header -->
-        <header class="text-center space-y-2">
-            <h1 class="text-2xl font-semibold text-slate-800">Meditation Timer</h1>
-            <p class="text-sm text-slate-500">บันทึกเวลาแห่งความสงบของคุณ</p>
+        <header class="text-center space-y-3">
+            <h1 class="text-3xl font-semibold text-slate-900">Meditation Timer</h1>
+            <p class="text-base text-slate-500">บันทึกเวลาแห่งความสงบของคุณ</p>
         </header>
 
         <!-- โหมดจับเวลาปัจจุบัน (Live Timer) -->
-        <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center space-y-6">
-            <!-- วงกลมสัญลักษณ์สมาธิ (รองรับสีกายภาพบำบัด Calming Sky Blue) -->
-            <div id="statusIndicator" class="w-24 h-24 mx-auto bg-teal-50 text-teal-600 rounded-full flex items-center justify-center transition-all duration-700">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <section class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 text-center space-y-8">
+            <!-- วงกลมสัญลักษณ์สมาธิ -->
+            <div id="statusIndicator" class="w-28 h-28 mx-auto bg-teal-50 text-teal-600 rounded-full flex items-center justify-center transition-all duration-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
             
-            <div class="space-y-1">
-                <h2 id="timerStatus" class="text-lg font-medium transition-colors duration-500">พร้อมเริ่มต้น</h2>
-                <p id="liveDuration" class="text-3xl font-light text-slate-400">00:00</p>
+            <div class="space-y-2">
+                <h2 id="timerStatus" class="text-xl font-medium transition-colors duration-500">พร้อมเริ่มต้น</h2>
+                <p id="liveDuration" class="text-5xl font-light text-slate-400 tracking-wider">00:00</p>
             </div>
 
-            <!-- การ์ดเวลาเริ่มต้น (Start Time Display Card) -->
-            <div id="startTimeCard" class="hidden transform translate-y-2 opacity-0 transition-all duration-500 bg-sky-50 text-sky-700 text-xs font-medium py-2 px-4 rounded-2xl mx-auto inline-block border border-sky-100">
-                เวลาเริ่มต้นของคุณ <span id="startTimeDisplay">--:--</span> น.
+            <!-- การ์ดเวลาเริ่มต้น -->
+            <div id="startTimeCard" class="hidden transform translate-y-2 opacity-0 transition-all duration-500 bg-sky-50 text-sky-700 text-sm font-medium py-2.5 px-5 rounded-2xl mx-auto inline-block border border-sky-100">
+                เวลาเริ่มต้นของคุณ <span id="startTimeDisplay" class="font-semibold">--:--</span> น.
             </div>
 
-            <!-- ปุ่มหลัก (ปรับเฉดสีเป็นฟ้าสว่างผ่อนคลายระหว่างทำงาน) -->
-            <button id="toggleBtn" onclick="toggleTimer()" class="w-full py-3.5 rounded-xl font-medium text-white bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all shadow-md">
+            <!-- ปุ่มหลัก -->
+            <button id="toggleBtn" onclick="toggleTimer()" class="w-full py-4 rounded-2xl text-lg font-medium text-white bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all shadow-md">
                 เริ่มนั่งสมาธิ (เวลาปัจจุบัน)
             </button>
         </section>
 
         <!-- โหมดระบุเวลาเอง (Manual Entry) -->
-        <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-            <h3 class="text-md font-medium text-slate-700">ระบุเวลาด้วยตนเอง</h3>
+        <section class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+            <h3 class="text-lg font-medium text-slate-800">ระบุเวลาด้วยตนเอง</h3>
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-5">
                 <!-- เวลาเริ่ม -->
-                <div class="space-y-1">
+                <div class="space-y-2">
                     <div class="flex justify-between items-center">
-                        <label class="text-xs text-slate-500 font-medium">เวลาเริ่ม</label>
-                        <button onclick="setCurrentTime('manualStart')" class="text-[11px] text-teal-600 hover:text-teal-700 active:scale-95 font-medium transition-all bg-teal-50 px-1.5 py-0.5 rounded">
-                            ตอนนี้
+                        <label class="text-sm text-slate-600 font-medium">เวลาเริ่ม</label>
+                        <!-- เปลี่ยนเป็นคำว่า "เพิ่มเวลาตอนนี้" -->
+                        <button onclick="setCurrentTime('manualStart')" class="text-xs text-teal-700 hover:text-teal-800 active:scale-95 font-medium transition-all bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-100">
+                            เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <input type="time" id="manualStart" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <input type="time" id="manualStart" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
                 </div>
                 
                 <!-- เวลาสิ้นสุด -->
-                <div class="space-y-1">
+                <div class="space-y-2">
                     <div class="flex justify-between items-center">
-                        <label class="text-xs text-slate-500 font-medium">เวลาสิ้นสุด</label>
-                        <button onclick="setCurrentTime('manualEnd')" class="text-[11px] text-teal-600 hover:text-teal-700 active:scale-95 font-medium transition-all bg-teal-50 px-1.5 py-0.5 rounded">
-                            ตอนนี้
+                        <label class="text-sm text-slate-600 font-medium">เวลาสิ้นสุด</label>
+                        <!-- เปลี่ยนเป็นคำว่า "เพิ่มเวลาตอนนี้" -->
+                        <button onclick="setCurrentTime('manualEnd')" class="text-xs text-teal-700 hover:text-teal-800 active:scale-95 font-medium transition-all bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-100">
+                            เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <input type="time" id="manualEnd" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <input type="time" id="manualEnd" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
                 </div>
             </div>
             
-            <button onclick="saveManualEntry()" class="w-full py-2.5 rounded-xl text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all">
+            <!-- เปลี่ยนเป็นคำว่า "คำนวณเวลา/บันทึกเวลา" -->
+            <button onclick="saveManualEntry()" class="w-full py-3.5 rounded-2xl text-base font-medium text-teal-800 bg-teal-50 hover:bg-teal-100 transition-all border border-teal-100">
                 คำนวณเวลา/บันทึกเวลา
             </button>
         </section>
 
         <!-- ประวัติการใช้งาน (History) -->
-        <section class="space-y-4 pt-4">
-            <div class="flex justify-between items-end">
-                <h3 class="text-md font-medium text-slate-700">ประวัติการนั่งสมาธิ</h3>
-                <span id="totalStats" class="text-xs font-medium text-teal-600 bg-teal-50 px-2 py-1 rounded-md">รวม 0 นาที</span>
+        <section class="space-y-4 pt-2">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-slate-800">ประวัติการนั่งสมาธิ</h3>
+                <span id="totalStats" class="text-sm font-medium text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100">รวม 0 นาที</span>
             </div>
-            <ul id="historyList" class="space-y-3">
+            <ul id="historyList" class="space-y-4">
                 <!-- ข้อมูลประวัติจะถูกเรนเดอร์ที่นี่ผ่าน JS -->
             </ul>
         </section>
@@ -142,28 +145,22 @@
         // --- Live Timer Logic ---
         function toggleTimer() {
             if (!isMeditating) {
-                // เปลี่ยนสถานะเป็น: กำลังนั่งสมาธิ
                 isMeditating = true;
                 startTime = new Date();
                 
-                // แตกเวลาสำหรับแสดงผลในการ์ดเวลาเริ่มต้น
                 const startHours = String(startTime.getHours()).padStart(2, '0');
                 const startMinutes = String(startTime.getMinutes()).padStart(2, '0');
                 startTimeDisplay.textContent = `${startHours}:${startMinutes}`;
                 
-                // แสดงการ์ดเวลาเริ่มต้นพร้อม Animation อ่อนๆ
                 startTimeCard.classList.remove('hidden');
                 setTimeout(() => {
                     startTimeCard.classList.remove('translate-y-2', 'opacity-0');
                 }, 50);
                 
-                // ชุดสีกายภาพบำบัดทางสายตา (Calming Sky Blue UI)
-                // ปรับปุ่มหลักเป็นสีฟ้าสว่างเฉดสงบ
                 toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
                 toggleBtn.classList.replace('bg-teal-600', 'bg-sky-400');
                 toggleBtn.classList.replace('hover:bg-teal-700', 'hover:bg-sky-500');
                 
-                // เพิ่มเอฟเฟกต์วงกลมกระเพื่อมช้าๆ (Breathing Effect) และเปลี่ยนเป็นสีฟ้า
                 statusIndicator.classList.add('breathing', 'bg-sky-100', 'text-sky-500');
                 statusIndicator.classList.remove('bg-teal-50', 'text-teal-600');
                 
@@ -172,7 +169,6 @@
 
                 timerInterval = setInterval(updateLiveDuration, 1000);
             } else {
-                // เปลี่ยนสถานะเป็น: บันทึกและรีเซ็ต
                 isMeditating = false;
                 const endTime = new Date();
                 clearInterval(timerInterval);
@@ -185,13 +181,11 @@
                     alert('เวลาสั้นเกินไป (น้อยกว่า 1 นาที) จะไม่ถูกบันทึก');
                 }
 
-                // รีเซ็ตการ์ดเวลาเริ่มต้นและซ่อนตัวทันที
                 startTimeCard.classList.add('translate-y-2', 'opacity-0');
                 setTimeout(() => {
                     startTimeCard.classList.add('hidden');
                 }, 500);
 
-                // ย้ายสีปุ่มหลักและไอคอนด้านบนกลับสู่ธีมเดิมอย่างนุ่มนวล
                 toggleBtn.textContent = 'เริ่มนั่งสมาธิ (เวลาปัจจุบัน)';
                 toggleBtn.classList.replace('bg-sky-400', 'bg-teal-600');
                 toggleBtn.classList.replace('hover:bg-sky-500', 'hover:bg-teal-700');
@@ -205,7 +199,6 @@
             }
         }
 
-        // อัปเดตการแสดงผลเวลาแบบ Live (นาที:วินาที)
         function updateLiveDuration() {
             const now = new Date();
             const diffSeconds = Math.floor((now - startTime) / 1000);
@@ -273,24 +266,24 @@
             let totalMinutes = 0;
 
             if (history.length === 0) {
-                historyList.innerHTML = '<li class="text-center text-sm text-slate-400 py-4">ยังไม่มีประวัติการนั่งสมาธิ</li>';
+                historyList.innerHTML = '<li class="text-center text-base text-slate-400 py-6 bg-white rounded-2xl border border-slate-100 shadow-sm">ยังไม่มีประวัติการนั่งสมาธิ</li>';
             } else {
                 history.forEach(session => {
                     totalMinutes += session.duration;
                     const li = document.createElement('li');
-                    li.className = 'bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center';
+                    li.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center gap-4';
                     
                     const readableDuration = formatMinutesToReadable(session.duration);
                     
                     li.innerHTML = `
-                        <div>
-                            <p class="text-sm font-medium text-slate-700">${session.date}</p>
-                            <p class="text-xs text-slate-500">${session.startTime} - ${session.endTime}</p>
+                        <div class="space-y-1">
+                            <p class="text-base font-medium text-slate-800">${session.date}</p>
+                            <p class="text-sm text-slate-500 font-medium">${session.startTime} - ${session.endTime}</p>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-md font-semibold text-teal-600">${readableDuration}</span>
-                            <button onclick="deleteSession(${session.id})" class="text-slate-300 hover:text-rose-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <div class="flex items-center gap-4">
+                            <span class="text-lg font-semibold text-teal-600">${readableDuration}</span>
+                            <button onclick="deleteSession(${session.id})" class="text-slate-300 hover:text-rose-500 transition-colors p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                 </svg>
                             </button>
