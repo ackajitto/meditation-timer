@@ -11,11 +11,11 @@
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .breathing {
-            animation: breathe 4s ease-in-out infinite;
+            animation: breathe 5s ease-in-out infinite;
         }
         @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
+            0%, 100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+            50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 25px 15px rgba(56, 189, 248, 0.2); }
         }
     </style>
 </head>
@@ -25,29 +25,36 @@
         
         <!-- Header -->
         <header class="text-center space-y-2">
-            <h1 class="text-2xl font-semibold text-teal-800">Meditation Timer</h1>
+            <h1 class="text-2xl font-semibold text-slate-800">Meditation Timer</h1>
             <p class="text-sm text-slate-500">บันทึกเวลาแห่งความสงบของคุณ</p>
         </header>
 
         <!-- โหมดจับเวลาปัจจุบัน (Live Timer) -->
         <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center space-y-6">
-            <div id="statusIndicator" class="w-24 h-24 mx-auto bg-teal-100 rounded-full flex items-center justify-center text-teal-600 transition-all duration-500">
+            <!-- วงกลมสัญลักษณ์สมาธิ (รองรับสีกายภาพบำบัด Calming Sky Blue) -->
+            <div id="statusIndicator" class="w-24 h-24 mx-auto bg-teal-50 text-teal-600 rounded-full flex items-center justify-center transition-all duration-700">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
             
             <div class="space-y-1">
-                <h2 id="timerStatus" class="text-lg font-medium">พร้อมเริ่มต้น</h2>
+                <h2 id="timerStatus" class="text-lg font-medium transition-colors duration-500">พร้อมเริ่มต้น</h2>
                 <p id="liveDuration" class="text-3xl font-light text-slate-400">00:00</p>
             </div>
 
+            <!-- การ์ดเวลาเริ่มต้น (Start Time Display Card) -->
+            <div id="startTimeCard" class="hidden transform translate-y-2 opacity-0 transition-all duration-500 bg-sky-50 text-sky-700 text-xs font-medium py-2 px-4 rounded-2xl mx-auto inline-block border border-sky-100">
+                เวลาเริ่มต้นของคุณ <span id="startTimeDisplay">--:--</span> น.
+            </div>
+
+            <!-- ปุ่มหลัก (ปรับเฉดสีเป็นฟ้าสว่างผ่อนคลายระหว่างทำงาน) -->
             <button id="toggleBtn" onclick="toggleTimer()" class="w-full py-3.5 rounded-xl font-medium text-white bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all shadow-md">
                 เริ่มนั่งสมาธิ (เวลาปัจจุบัน)
             </button>
         </section>
 
-        <!-- โหมดระบุเวลาเอง (Manual Entry) - อัปเกรด UX ใหม่ -->
+        <!-- โหมดระบุเวลาเอง (Manual Entry) -->
         <section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
             <h3 class="text-md font-medium text-slate-700">ระบุเวลาด้วยตนเอง</h3>
             
@@ -76,7 +83,7 @@
             </div>
             
             <button onclick="saveManualEntry()" class="w-full py-2.5 rounded-xl text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all">
-                บันทึกเวลา
+                คำนวณเวลา/บันทึกเวลา
             </button>
         </section>
 
@@ -107,6 +114,8 @@
         const liveDuration = document.getElementById('liveDuration');
         const historyList = document.getElementById('historyList');
         const totalStats = document.getElementById('totalStats');
+        const startTimeCard = document.getElementById('startTimeCard');
+        const startTimeDisplay = document.getElementById('startTimeDisplay');
 
         // Initialize
         renderHistory();
@@ -133,21 +142,37 @@
         // --- Live Timer Logic ---
         function toggleTimer() {
             if (!isMeditating) {
+                // เปลี่ยนสถานะเป็น: กำลังนั่งสมาธิ
                 isMeditating = true;
                 startTime = new Date();
                 
-                toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
-                toggleBtn.classList.replace('bg-teal-600', 'bg-rose-500');
-                toggleBtn.classList.replace('hover:bg-teal-700', 'hover:bg-rose-600');
+                // แตกเวลาสำหรับแสดงผลในการ์ดเวลาเริ่มต้น
+                const startHours = String(startTime.getHours()).padStart(2, '0');
+                const startMinutes = String(startTime.getMinutes()).padStart(2, '0');
+                startTimeDisplay.textContent = `${startHours}:${startMinutes}`;
                 
-                statusIndicator.classList.add('breathing', 'bg-rose-100', 'text-rose-600');
-                statusIndicator.classList.remove('bg-teal-100', 'text-teal-600');
+                // แสดงการ์ดเวลาเริ่มต้นพร้อม Animation อ่อนๆ
+                startTimeCard.classList.remove('hidden');
+                setTimeout(() => {
+                    startTimeCard.classList.remove('translate-y-2', 'opacity-0');
+                }, 50);
+                
+                // ชุดสีกายภาพบำบัดทางสายตา (Calming Sky Blue UI)
+                // ปรับปุ่มหลักเป็นสีฟ้าสว่างเฉดสงบ
+                toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
+                toggleBtn.classList.replace('bg-teal-600', 'bg-sky-400');
+                toggleBtn.classList.replace('hover:bg-teal-700', 'hover:bg-sky-500');
+                
+                // เพิ่มเอฟเฟกต์วงกลมกระเพื่อมช้าๆ (Breathing Effect) และเปลี่ยนเป็นสีฟ้า
+                statusIndicator.classList.add('breathing', 'bg-sky-100', 'text-sky-500');
+                statusIndicator.classList.remove('bg-teal-50', 'text-teal-600');
                 
                 timerStatus.textContent = 'กำลังนั่งสมาธิ...';
-                timerStatus.classList.add('text-rose-600');
+                timerStatus.classList.add('text-sky-600');
 
                 timerInterval = setInterval(updateLiveDuration, 1000);
             } else {
+                // เปลี่ยนสถานะเป็น: บันทึกและรีเซ็ต
                 isMeditating = false;
                 const endTime = new Date();
                 clearInterval(timerInterval);
@@ -160,19 +185,27 @@
                     alert('เวลาสั้นเกินไป (น้อยกว่า 1 นาที) จะไม่ถูกบันทึก');
                 }
 
+                // รีเซ็ตการ์ดเวลาเริ่มต้นและซ่อนตัวทันที
+                startTimeCard.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    startTimeCard.classList.add('hidden');
+                }, 500);
+
+                // ย้ายสีปุ่มหลักและไอคอนด้านบนกลับสู่ธีมเดิมอย่างนุ่มนวล
                 toggleBtn.textContent = 'เริ่มนั่งสมาธิ (เวลาปัจจุบัน)';
-                toggleBtn.classList.replace('bg-rose-500', 'bg-teal-600');
-                toggleBtn.classList.replace('hover:bg-rose-600', 'hover:bg-teal-700');
+                toggleBtn.classList.replace('bg-sky-400', 'bg-teal-600');
+                toggleBtn.classList.replace('hover:bg-sky-500', 'hover:bg-teal-700');
                 
-                statusIndicator.classList.remove('breathing', 'bg-rose-100', 'text-rose-600');
-                statusIndicator.classList.add('bg-teal-100', 'text-teal-600');
+                statusIndicator.classList.remove('breathing', 'bg-sky-100', 'text-sky-500');
+                statusIndicator.classList.add('bg-teal-50', 'text-teal-600');
                 
                 timerStatus.textContent = 'พร้อมเริ่มต้น';
-                timerStatus.classList.remove('text-rose-600');
+                timerStatus.classList.remove('text-sky-600');
                 liveDuration.textContent = '00:00';
             }
         }
 
+        // อัปเดตการแสดงผลเวลาแบบ Live (นาที:วินาที)
         function updateLiveDuration() {
             const now = new Date();
             const diffSeconds = Math.floor((now - startTime) / 1000);
@@ -195,7 +228,6 @@
             const startObj = new Date(`${today}T${startInput}`);
             let endObj = new Date(`${today}T${endInput}`);
 
-            // กรณีเวลาสิ้นสุดข้ามวัน เช่น เริ่ม 23:30 เลิก 00:15
             if (endObj < startObj) {
                 endObj.setDate(endObj.getDate() + 1);
             }
@@ -248,7 +280,6 @@
                     const li = document.createElement('li');
                     li.className = 'bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center';
                     
-                    // เรียกใช้ฟังก์ชันแปลงเวลาให้อ่านง่าย ชม. และ นาที สำหรับในลิสต์ประวัติ
                     const readableDuration = formatMinutesToReadable(session.duration);
                     
                     li.innerHTML = `
@@ -269,7 +300,6 @@
                 });
             }
             
-            // แสดงผลเวลารวมทั้งหมดด้านบนประวัติ
             totalStats.textContent = `รวม ${formatMinutesToReadable(totalMinutes)}`;
         }
     </script>
