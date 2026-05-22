@@ -17,12 +17,20 @@
             0%, 100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
             50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 30px 20px rgba(56, 189, 248, 0.25); }
         }
+        /* บังคับให้ข้อความเวลาใน Input แสดงกึ่งกลางอย่างสวยงามทั้งบน iOS และ Android */
+        input[type="time"] {
+            text-align: center;
+        }
+        input[type="time"]::-webkit-datetime-edit {
+            display: flex;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
 
     <main class="w-full max-w-md space-y-8">
-        
+         
         <!-- Header -->
         <header class="text-center space-y-3">
             <h1 class="text-3xl font-semibold text-slate-900">Meditation Timer</h1>
@@ -37,7 +45,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            
+             
             <div class="space-y-2">
                 <h2 id="timerStatus" class="text-xl font-medium transition-colors duration-500">พร้อมเริ่มต้น</h2>
                 <p id="liveDuration" class="text-5xl font-light text-slate-400 tracking-wider">00:00</p>
@@ -57,10 +65,10 @@
         <!-- โหมดระบุเวลาเอง (Manual Entry) -->
         <section class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
             <h3 class="text-lg font-medium text-slate-800">ระบุเวลาด้วยตนเอง</h3>
-            
+             
             <div class="space-y-5">
                 <!-- เวลาเริ่ม -->
-                <div class="space-y-2">
+                <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-center">
                         <label class="text-sm text-slate-600 font-medium">เวลาเริ่ม</label>
                         <!-- เปลี่ยนเป็นคำว่า "เพิ่มเวลาตอนนี้" -->
@@ -68,11 +76,13 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <input type="time" id="manualStart" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                    <div>
+                        <input type="time" id="manualStart" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                    </div>
                 </div>
-                
+                 
                 <!-- เวลาสิ้นสุด -->
-                <div class="space-y-2">
+                <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-center">
                         <label class="text-sm text-slate-600 font-medium">เวลาสิ้นสุด</label>
                         <!-- เปลี่ยนเป็นคำว่า "เพิ่มเวลาตอนนี้" -->
@@ -80,10 +90,12 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <input type="time" id="manualEnd" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                    <div>
+                        <input type="time" id="manualEnd" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                    </div>
                 </div>
             </div>
-            
+             
             <!-- เปลี่ยนเป็นคำว่า "คำนวณเวลา/บันทึกเวลา" -->
             <button onclick="saveManualEntry()" class="w-full py-3.5 rounded-2xl text-base font-medium text-teal-800 bg-teal-50 hover:bg-teal-100 transition-all border border-teal-100">
                 คำนวณเวลา/บันทึกเวลา
@@ -135,7 +147,7 @@
         function formatMinutesToReadable(totalMinutes) {
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
-            
+             
             let result = '';
             if (hours > 0) result += `${hours} ชม. `;
             if (mins > 0 || hours === 0) result += `${mins} นาที`;
@@ -147,23 +159,23 @@
             if (!isMeditating) {
                 isMeditating = true;
                 startTime = new Date();
-                
+                 
                 const startHours = String(startTime.getHours()).padStart(2, '0');
                 const startMinutes = String(startTime.getMinutes()).padStart(2, '0');
                 startTimeDisplay.textContent = `${startHours}:${startMinutes}`;
-                
+                 
                 startTimeCard.classList.remove('hidden');
                 setTimeout(() => {
                     startTimeCard.classList.remove('translate-y-2', 'opacity-0');
                 }, 50);
-                
+                 
                 toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
                 toggleBtn.classList.replace('bg-teal-600', 'bg-sky-400');
                 toggleBtn.classList.replace('hover:bg-teal-700', 'hover:bg-sky-500');
-                
+                 
                 statusIndicator.classList.add('breathing', 'bg-sky-100', 'text-sky-500');
                 statusIndicator.classList.remove('bg-teal-50', 'text-teal-600');
-                
+                 
                 timerStatus.textContent = 'กำลังนั่งสมาธิ...';
                 timerStatus.classList.add('text-sky-600');
 
@@ -172,9 +184,9 @@
                 isMeditating = false;
                 const endTime = new Date();
                 clearInterval(timerInterval);
-                
+                 
                 const durationMinutes = Math.round((endTime - startTime) / 60000);
-                
+                 
                 if (durationMinutes > 0) {
                     saveSession(startTime, endTime, durationMinutes);
                 } else {
@@ -189,10 +201,10 @@
                 toggleBtn.textContent = 'เริ่มนั่งสมาธิ (เวลาปัจจุบัน)';
                 toggleBtn.classList.replace('bg-sky-400', 'bg-teal-600');
                 toggleBtn.classList.replace('hover:bg-sky-500', 'hover:bg-teal-700');
-                
+                 
                 statusIndicator.classList.remove('breathing', 'bg-sky-100', 'text-sky-500');
                 statusIndicator.classList.add('bg-teal-50', 'text-teal-600');
-                
+                 
                 timerStatus.textContent = 'พร้อมเริ่มต้น';
                 timerStatus.classList.remove('text-sky-600');
                 liveDuration.textContent = '00:00';
@@ -226,14 +238,14 @@
             }
 
             const durationMinutes = Math.round((endObj - startObj) / 60000);
-            
+             
             if (durationMinutes === 0) {
                 alert('เวลาเริ่มต้นและสิ้นสุดตรงกันพอดี กรุณาตรวจสอบอีกครั้ง');
                 return;
             }
 
             saveSession(startObj, endObj, durationMinutes);
-            
+             
             document.getElementById('manualStart').value = '';
             document.getElementById('manualEnd').value = '';
         }
@@ -272,9 +284,9 @@
                     totalMinutes += session.duration;
                     const li = document.createElement('li');
                     li.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center gap-4';
-                    
+                     
                     const readableDuration = formatMinutesToReadable(session.duration);
-                    
+                     
                     li.innerHTML = `
                         <div class="space-y-1">
                             <p class="text-base font-medium text-slate-800">${session.date}</p>
@@ -292,7 +304,7 @@
                     historyList.appendChild(li);
                 });
             }
-            
+             
             totalStats.textContent = `รวม ${formatMinutesToReadable(totalMinutes)}`;
         }
     </script>
