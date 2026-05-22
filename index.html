@@ -6,6 +6,12 @@
     <title>Meditation Timer | บันทึกการนั่งสมาธิ</title>
     <!-- นำเข้า Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // ตั้งค่า Tailwind ให้รองรับ Class-based Dark Mode
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <!-- นำเข้าฟอนต์ Prompt -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -17,42 +23,77 @@
             0%, 100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
             50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 30px 20px rgba(56, 189, 248, 0.25); }
         }
-        /* บังคับให้ข้อความเวลาใน Input แสดงกึ่งกลางอย่างสวยงามทั้งบน iOS และ Android */
+        
+        /* แก้ไขปัญหาความกว้างล้นทะลุหน้าจอด้านขวาบนอุปกรณ์ iOS / Safari */
         input[type="time"] {
             text-align: center;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+        
+        /* บังคับจัดตัวอักษรและเวลาให้อยู่กึ่งกลางอย่างปลอดภัยบน iOS Safari และ Android */
+        input[type="time"]::-webkit-date-and-time-value {
+            display: block;
+            text-align: center;
+            width: 100%;
+            min-height: 1.5em;
         }
         input[type="time"]::-webkit-datetime-edit {
-            display: flex;
-            justify-content: center;
+            text-align: center;
+            width: 100%;
         }
     </style>
+    <script>
+        // ฟังก์ชันเริ่มทำงานเพื่อเช็คธีมล่าสุดก่อนที่หน้าเว็บจะแสดงผล (ป้องกันหน้าจอกระพริบ)
+        (function() {
+            const isDark = localStorage.getItem('darkMode') === 'enabled' || 
+                (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6 transition-colors duration-300">
+
+    <!-- ปุ่มสลับโหมดมืด/สว่าง -->
+    <button id="darkModeToggle" onclick="toggleDarkMode()" class="fixed top-4 right-4 p-3 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all z-50 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Toggle dark mode">
+        <!-- ไอคอนพระจันทร์ (แสดงตอนโหมดสว่าง) -->
+        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+        <!-- ไอคอนพระอาทิตย์ (แสดงตอนโหมดมืด) -->
+        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
+        </svg>
+    </button>
 
     <main class="w-full max-w-md space-y-8">
          
         <!-- Header -->
         <header class="text-center space-y-3">
-            <h1 class="text-3xl font-semibold text-slate-900">Meditation Timer</h1>
-            <p class="text-base text-slate-500">บันทึกเวลาแห่งความสงบของคุณ</p>
+            <h1 class="text-3xl font-semibold text-slate-900 dark:text-white">Meditation Timer</h1>
+            <p class="text-base text-slate-500 dark:text-slate-400">บันทึกเวลาแห่งความสงบของคุณ</p>
         </header>
 
         <!-- โหมดจับเวลาปัจจุบัน (Live Timer) -->
-        <section class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 text-center space-y-8">
+        <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 text-center space-y-8 transition-colors duration-300">
             <!-- วงกลมสัญลักษณ์สมาธิ -->
-            <div id="statusIndicator" class="w-28 h-28 mx-auto bg-teal-50 text-teal-600 rounded-full flex items-center justify-center transition-all duration-700">
+            <div id="statusIndicator" class="w-28 h-28 mx-auto bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center transition-all duration-700">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
              
             <div class="space-y-2">
-                <h2 id="timerStatus" class="text-xl font-medium transition-colors duration-500">พร้อมเริ่มต้น</h2>
-                <p id="liveDuration" class="text-5xl font-light text-slate-400 tracking-wider">00:00</p>
+                <h2 id="timerStatus" class="text-xl font-medium dark:text-slate-200 transition-colors duration-500">พร้อมเริ่มต้น</h2>
+                <p id="liveDuration" class="text-5xl font-light text-slate-400 dark:text-slate-500 tracking-wider">00:00</p>
             </div>
 
             <!-- การ์ดเวลาเริ่มต้น -->
-            <div id="startTimeCard" class="hidden transform translate-y-2 opacity-0 transition-all duration-500 bg-sky-50 text-sky-700 text-sm font-medium py-2.5 px-5 rounded-2xl mx-auto inline-block border border-sky-100">
+            <div id="startTimeCard" class="hidden transform translate-y-2 opacity-0 transition-all duration-500 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 text-sm font-medium py-2.5 px-5 rounded-2xl mx-auto inline-block border border-sky-100 dark:border-sky-900/50">
                 เวลาเริ่มต้นของคุณ <span id="startTimeDisplay" class="font-semibold">--:--</span> น.
             </div>
 
@@ -63,41 +104,41 @@
         </section>
 
         <!-- โหมดระบุเวลาเอง (Manual Entry) -->
-        <section class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-            <h3 class="text-lg font-medium text-slate-800">ระบุเวลาด้วยตนเอง</h3>
+        <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6 transition-colors duration-300">
+            <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ระบุเวลาด้วยตนเอง</h3>
              
             <div class="space-y-5">
                 <!-- เวลาเริ่ม -->
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-center">
-                        <label class="text-sm text-slate-600 font-medium">เวลาเริ่ม</label>
-                        <!-- เปลี่ยนเป็นคำว่า "เพิ่มเวลาตอนนี้" -->
-                        <button onclick="setCurrentTime('manualStart')" class="text-xs text-teal-700 hover:text-teal-800 active:scale-95 font-medium transition-all bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-100">
+                        <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาเริ่ม</label>
+                        <!-- ปุ่ม "เพิ่มเวลาตอนนี้" -->
+                        <button onclick="setCurrentTime('manualStart')" class="text-xs text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 active:scale-95 font-medium transition-all bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
                     <div>
-                        <input type="time" id="manualStart" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                        <input type="time" id="manualStart" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
                  
                 <!-- เวลาสิ้นสุด -->
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-center">
-                        <label class="text-sm text-slate-600 font-medium">เวลาสิ้นสุด</label>
-                        <!-- เปลี่ยนเป็นคำว่า "เพิ่มเวลาตอนนี้" -->
-                        <button onclick="setCurrentTime('manualEnd')" class="text-xs text-teal-700 hover:text-teal-800 active:scale-95 font-medium transition-all bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-100">
+                        <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาสิ้นสุด</label>
+                        <!-- ปุ่ม "เพิ่มเวลาตอนนี้" -->
+                        <button onclick="setCurrentTime('manualEnd')" class="text-xs text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 active:scale-95 font-medium transition-all bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
                     <div>
-                        <input type="time" id="manualEnd" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                        <input type="time" id="manualEnd" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
             </div>
              
-            <!-- เปลี่ยนเป็นคำว่า "คำนวณเวลา/บันทึกเวลา" -->
-            <button onclick="saveManualEntry()" class="w-full py-3.5 rounded-2xl text-base font-medium text-teal-800 bg-teal-50 hover:bg-teal-100 transition-all border border-teal-100">
+            <!-- ปุ่มคำนวณเวลา -->
+            <button onclick="saveManualEntry()" class="w-full py-3.5 rounded-2xl text-base font-medium text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-all border border-teal-100 dark:border-teal-900/50">
                 คำนวณเวลา/บันทึกเวลา
             </button>
         </section>
@@ -105,8 +146,8 @@
         <!-- ประวัติการใช้งาน (History) -->
         <section class="space-y-4 pt-2">
             <div class="flex justify-between items-center">
-                <h3 class="text-lg font-medium text-slate-800">ประวัติการนั่งสมาธิ</h3>
-                <span id="totalStats" class="text-sm font-medium text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100">รวม 0 นาที</span>
+                <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ประวัติการนั่งสมาธิ</h3>
+                <span id="totalStats" class="text-sm font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">รวม 0 นาที</span>
             </div>
             <ul id="historyList" class="space-y-4">
                 <!-- ข้อมูลประวัติจะถูกเรนเดอร์ที่นี่ผ่าน JS -->
@@ -134,6 +175,17 @@
 
         // Initialize
         renderHistory();
+
+        // ฟังก์ชันสลับโหมดมืด / โหมดสว่าง
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('darkMode', 'disabled');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'enabled');
+            }
+        }
 
         // ฟังก์ชันช่วยดึงเวลาปัจจุบันใส่ใน Input ช่องระบุเวลาเอง
         function setCurrentTime(inputId) {
@@ -177,7 +229,7 @@
                 statusIndicator.classList.remove('bg-teal-50', 'text-teal-600');
                  
                 timerStatus.textContent = 'กำลังนั่งสมาธิ...';
-                timerStatus.classList.add('text-sky-600');
+                timerStatus.classList.add('text-sky-600', 'dark:text-sky-400');
 
                 timerInterval = setInterval(updateLiveDuration, 1000);
             } else {
@@ -206,7 +258,7 @@
                 statusIndicator.classList.add('bg-teal-50', 'text-teal-600');
                  
                 timerStatus.textContent = 'พร้อมเริ่มต้น';
-                timerStatus.classList.remove('text-sky-600');
+                timerStatus.classList.remove('text-sky-600', 'dark:text-sky-400');
                 liveDuration.textContent = '00:00';
             }
         }
@@ -278,23 +330,23 @@
             let totalMinutes = 0;
 
             if (history.length === 0) {
-                historyList.innerHTML = '<li class="text-center text-base text-slate-400 py-6 bg-white rounded-2xl border border-slate-100 shadow-sm">ยังไม่มีประวัติการนั่งสมาธิ</li>';
+                historyList.innerHTML = '<li class="text-center text-base text-slate-400 dark:text-slate-500 py-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">ยังไม่มีประวัติการนั่งสมาธิ</li>';
             } else {
                 history.forEach(session => {
                     totalMinutes += session.duration;
                     const li = document.createElement('li');
-                    li.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center gap-4';
+                    li.className = 'bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center gap-4 transition-colors duration-300';
                      
                     const readableDuration = formatMinutesToReadable(session.duration);
                      
                     li.innerHTML = `
                         <div class="space-y-1">
-                            <p class="text-base font-medium text-slate-800">${session.date}</p>
-                            <p class="text-sm text-slate-500 font-medium">${session.startTime} - ${session.endTime}</p>
+                            <p class="text-base font-medium text-slate-800 dark:text-slate-200">${session.date}</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">${session.startTime} - ${session.endTime}</p>
                         </div>
                         <div class="flex items-center gap-4">
-                            <span class="text-lg font-semibold text-teal-600">${readableDuration}</span>
-                            <button onclick="deleteSession(${session.id})" class="text-slate-300 hover:text-rose-500 transition-colors p-1">
+                            <span class="text-lg font-semibold text-teal-600 dark:text-teal-400">${readableDuration}</span>
+                            <button onclick="deleteSession(${session.id})" class="text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors p-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                 </svg>
