@@ -178,6 +178,7 @@
         renderHistory();
 
         // ฟังก์ชันสลับโหมดมืด / โหมดสว่าง
+        // หน้าหลักเริ่มที่โหมดสว่าง หากเลือกปิดหรือเปิดใหม่จะคงค่าไว้
         function toggleDarkMode() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
@@ -333,8 +334,30 @@
             if (history.length === 0) {
                 historyList.innerHTML = '<li class="text-center text-base text-slate-400 dark:text-slate-500 py-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">ยังไม่มีประวัติการนั่งสมาธิ</li>';
             } else {
+                // คำนวณเวลารวมแยกแต่ละวันไว้ล่วงหน้า
+                const dailyTotals = {};
+                history.forEach(session => {
+                    dailyTotals[session.date] = (dailyTotals[session.date] || 0) + session.duration;
+                });
+
+                let lastDate = null;
                 history.forEach(session => {
                     totalMinutes += session.duration;
+                     
+                    // หากเป็นวันใหม่ ให้แทรกแถวหัวข้อคั่นเพื่อแบ่งวัน และแสดงเวลารวมของวันนั้น
+                    if (session.date !== lastDate) {
+                        lastDate = session.date;
+                        const dividerLi = document.createElement('li');
+                        dividerLi.className = 'pt-6 pb-2 first:pt-2 list-none';
+                        dividerLi.innerHTML = `
+                            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                                <span>📅 ${session.date}</span>
+                                <span class="text-teal-600 dark:text-teal-400 font-medium">รวมวันนี้: ${formatMinutesToReadable(dailyTotals[session.date])}</span>
+                            </div>
+                        `;
+                        historyList.appendChild(dividerLi);
+                    }
+
                     const li = document.createElement('li');
                     li.className = 'bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center gap-4 transition-colors duration-300';
                      
