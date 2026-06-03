@@ -46,13 +46,13 @@
         }
     </style>
     <script>
-        // หน้าหลักเริ่มต้นที่โหมดมืดเสมอ (หากไม่ได้กดปิดโหมดมืดไว้ก่อนหน้า)
+        // หน้าหลักเริ่มต้นที่โหมดสว่างเสมอ
         (function() {
-            const darkMode = localStorage.getItem('darkMode');
-            if (darkMode === 'disabled') {
-                document.documentElement.classList.remove('dark');
-            } else {
+            const isDark = localStorage.getItem('darkMode') === 'enabled';
+            if (isDark) {
                 document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
             }
         })();
     </script>
@@ -71,7 +71,7 @@
         </svg>
     </button>
 
-    <main class="w-full max-w-md space-y-8">
+    <main class="w-full max-w-md space-y-8 flex-grow">
          
         <!-- Header -->
         <header class="text-center space-y-3">
@@ -145,7 +145,7 @@
         </section>
 
         <!-- ประวัติการใช้งาน (History) -->
-        <section class="space-y-4 pt-2">
+        <section class="space-y-4 pt-2 pb-6">
             <div class="flex justify-between items-center">
                 <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ประวัติการนั่งสมาธิ</h3>
                 <span id="totalStats" class="text-sm font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">รวม 0 นาที</span>
@@ -154,8 +154,26 @@
                 <!-- ข้อมูลประวัติจะถูกเรนเดอร์ที่นี่ผ่าน JS -->
             </ul>
         </section>
-
     </main>
+
+    <!-- ส่วนเครดิตด้านล่างสุด -->
+    <footer class="w-full text-center py-6 text-sm text-slate-400 dark:text-slate-600 font-medium">
+        ©Apai
+    </footer>
+
+    <!-- กล่องแจ้งเตือนความงามระดับพรีเมียม (Custom Premium Modal) แทนการใช้ alert/confirm แบบเก่า -->
+    <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-100 dark:border-slate-800/80 shadow-2xl space-y-4 transform scale-95 transition-transform duration-300">
+            <div class="flex items-center gap-3">
+                <span id="modalIcon" class="text-2xl">💡</span>
+                <h4 id="modalTitle" class="text-lg font-semibold text-slate-950 dark:text-white">แจ้งเตือน</h4>
+            </div>
+            <p id="modalMessage" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+            <div id="modalButtons" class="flex justify-end gap-2.5 pt-2">
+                <!-- ปุ่มจะเปลี่ยนไปตามรูปแบบ alert หรือ confirm -->
+            </div>
+        </div>
+    </div>
 
     <script>
         // State Management
@@ -173,12 +191,66 @@
         const totalStats = document.getElementById('totalStats');
         const startTimeCard = document.getElementById('startTimeCard');
         const startTimeDisplay = document.getElementById('startTimeDisplay');
+        
+        // Modal Elements
+        const customModal = document.getElementById('customModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalButtons = document.getElementById('modalButtons');
+        const modalIcon = document.getElementById('modalIcon');
 
         // Initialize
         renderHistory();
 
+        // ฟังก์ชันควบคุม Custom Modal ทดแทนเบราว์เซอร์ดีฟอลต์
+        function showCustomAlert(title, message, iconStr = '💡') {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalIcon.textContent = iconStr;
+            modalButtons.innerHTML = `
+                <button onclick="closeCustomModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white transition-all active:scale-95">
+                    ตกลง
+                </button>
+            `;
+            openModal();
+        }
+
+        function showCustomConfirm(title, message, onConfirm, iconStr = '❓') {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalIcon.textContent = iconStr;
+            modalButtons.innerHTML = `
+                <button onclick="closeCustomModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    ยกเลิก
+                </button>
+                <button id="modalConfirmBtn" class="px-5 py-2 rounded-xl text-sm font-semibold bg-rose-500 hover:bg-rose-600 text-white transition-all active:scale-95">
+                    ยืนยันลบ
+                </button>
+            `;
+            document.getElementById('modalConfirmBtn').onclick = () => {
+                onConfirm();
+                closeCustomModal();
+            };
+            openModal();
+        }
+
+        function openModal() {
+            customModal.classList.remove('hidden');
+            setTimeout(() => {
+                customModal.classList.add('opacity-100');
+                customModal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeCustomModal() {
+            customModal.classList.remove('opacity-100');
+            customModal.querySelector('div').classList.remove('scale-100');
+            setTimeout(() => {
+                customModal.classList.add('hidden');
+            }, 300);
+        }
+
         // ฟังก์ชันสลับโหมดมืด / โหมดสว่าง
-        // หน้าหลักเริ่มที่โหมดสว่าง หากเลือกปิดหรือเปิดใหม่จะคงค่าไว้
         function toggleDarkMode() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
@@ -244,7 +316,7 @@
                 if (durationMinutes > 0) {
                     saveSession(startTime, endTime, durationMinutes);
                 } else {
-                    alert('เวลาสั้นเกินไป (น้อยกว่า 1 นาที) จะไม่ถูกบันทึก');
+                    showCustomAlert('แจ้งเตือน', 'เวลาสั้นเกินไป (น้อยกว่า 1 นาที) จะไม่ถูกบันทึก', '⏳');
                 }
 
                 startTimeCard.classList.add('translate-y-2', 'opacity-0');
@@ -279,7 +351,7 @@
             const endInput = document.getElementById('manualEnd').value;
 
             if (!startInput || !endInput) {
-                alert('กรุณาระบุทั้งเวลาเริ่มและเวลาสิ้นสุด');
+                showCustomAlert('แจ้งเตือน', 'กรุณาระบุทั้งเวลาเริ่มและเวลาสิ้นสุด', '⚠️');
                 return;
             }
 
@@ -294,7 +366,7 @@
             const durationMinutes = Math.round((endObj - startObj) / 60000);
              
             if (durationMinutes === 0) {
-                alert('เวลาเริ่มต้นและสิ้นสุดตรงกันพอดี กรุณาตรวจสอบอีกครั้ง');
+                showCustomAlert('แจ้งเตือน', 'เวลาเริ่มต้นและสิ้นสุดตรงกันพอดี กรุณาตรวจสอบอีกครั้ง', '⚠️');
                 return;
             }
 
@@ -320,11 +392,11 @@
         }
 
         function deleteSession(id) {
-            if(confirm('คุณต้องการลบประวัติรายการนี้ใช่หรือไม่?')) {
+            showCustomConfirm('ยืนยันการลบ', 'คุณต้องการลบประวัติรายการนี้ใช่หรือไม่?', () => {
                 history = history.filter(session => session.id !== id);
                 localStorage.setItem('meditationHistory', JSON.stringify(history));
                 renderHistory();
-            }
+            }, '🗑️');
         }
 
         function renderHistory() {
@@ -352,11 +424,7 @@
                         dividerLi.innerHTML = `
                             <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
                                 <span class="flex items-center gap-1.5">
-                                    <!-- ไอคอนใบไม้เพื่อความผ่อนคลายและสงบเย็น -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-teal-600 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 0 8.5C17 15 15 18 11 20z"></path>
-                                        <path d="M19 2c-2.26 4.33-5.27 7.14-8 10"></path>
-                                    </svg>
+                                    <span class="text-base">🍀</span>
                                     <span>${session.date}</span>
                                 </span>
                                 <span class="text-teal-600 dark:text-teal-400 font-medium">รวมวันนี้: ${formatMinutesToReadable(dailyTotals[session.date])}</span>
