@@ -211,32 +211,39 @@
                         .replace(/[#$\[\]]/g, "_");
         }
 
-        // ฟังก์ชันเชื่อมต่อและตรวจสอบ (อัปเดตใหม่)
-        async function saveCustomUsername() {
-            const inputVal = document.getElementById('customUsernameInput').value.trim().toLowerCase();
-            if (!inputVal || !inputVal.includes('@')) {
-                showCustomAlert('แจ้งเตือน', 'กรุณากรอกอีเมลให้ถูกต้องจ้ะ', '⚠️');
-                return;
-            }
+       // ฟังก์ชันเชื่อมต่อและตรวจสอบ (อัปเดตใหม่: บล็อกคนไม่มีชื่อในระบบ)
+async function saveCustomUsername() {
+    const inputVal = document.getElementById('customUsernameInput').value.trim().toLowerCase();
+    if (!inputVal || !inputVal.includes('@')) {
+        showCustomAlert('แจ้งเตือน', 'กรุณากรอกอีเมลให้ถูกต้องจ้ะ', '⚠️');
+        return;
+    }
 
-            const safePath = convertEmailToPath(inputVal);
-            
-            try {
-                // ตรวจสอบใน Firebase ว่ามีข้อมูลอยู่ไหม
-                const snapshot = await database.ref(`meditation_users/${safePath}`).once('value');
-                
-                localStorage.setItem('user_display_email', inputVal);
-                localStorage.setItem('prayer_username', safePath);
-                rawEmail = inputVal;
-                
-                if (historyRef) historyRef.off();
-                checkLoginStatus();
-                showCustomAlert('เชื่อมต่อสำเร็จ', `ยินดีต้อนรับคุณ ${inputVal} ระบบพร้อมใช้งานแล้วจ้ะ`, '✅');
-            } catch (error) {
-                console.error(error);
-                showCustomAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้', '❌');
-            }
+    const safePath = convertEmailToPath(inputVal);
+    
+    try {
+        // วิ่งไปถาม Firebase ว่ามีโฟลเดอร์ของอีเมลนี้อยู่ไหม?
+        const snapshot = await database.ref(`meditation_users/${safePath}`).once('value');
+        
+        // 🔒 เพิ่มด่านตรวจ: ถ้าไม่มีข้อมูลในระบบ ให้เด้งออกทันที
+        if (!snapshot.exists()) {
+            showCustomAlert('ไม่อนุญาตให้เข้าถึง', 'ไม่พบอีเมลนี้ในระบบ กรุณาใช้งานเว็บสวดมนต์เพื่อสร้างข้อมูลก่อนนะจ๊ะ', '⛔');
+            return; // หยุดการทำงาน ไม่ให้บันทึกสถานะล็อกอิน
         }
+        
+        // ✅ ถ้าผ่านด่านมาได้ (มีข้อมูลอยู่จริง) ค่อยอนุญาตให้เข้าใช้งาน
+        localStorage.setItem('user_display_email', inputVal);
+        localStorage.setItem('prayer_username', safePath);
+        rawEmail = inputVal;
+        
+        if (historyRef) historyRef.off();
+        checkLoginStatus();
+        showCustomAlert('เชื่อมต่อสำเร็จ', `ยินดีต้อนรับคุณ ${inputVal} ระบบดึงข้อมูลเรียบร้อยแล้วจ้ะ`, '✅');
+    } catch (error) {
+        console.error(error);
+        showCustomAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้ หรือสิทธิ์การเข้าถึงถูกปฏิเสธ', '❌');
+    }
+}
 
         function checkLoginStatus() {
             if (rawEmail) {
