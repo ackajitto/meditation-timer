@@ -1,192 +1,4 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Meditation Timer | บันทึกการนั่งสมาธิ</title>
-    <!-- นำเข้า Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
-    <!-- นำเข้าฟอนต์ Prompt -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- นำเข้า Firebase App และ Database SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
-    <style>
-        body { font-family: 'Prompt', sans-serif; }
-        .breathing {
-            animation: breathe 5s ease-in-out infinite;
-        }
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.7; box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
-            50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 30px 20px rgba(56, 189, 248, 0.25); }
-        }
-        input[type="time"] {
-            box-sizing: border-box;
-            width: 100%;
-            max-width: 100%;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        input[type="time"]::-webkit-date-and-time-value {
-            display: block;
-            text-align: center;
-            width: 100%;
-            min-height: 1.5em;
-        }
-        input[type="time"]::-webkit-datetime-edit {
-            text-align: center;
-            width: 100%;
-        }
-    </style>
-    <script>
-        // ตั้งค่าเริ่มต้นเป็นโหมดมืด (Dark Mode) เสมอ
-        (function() {
-            const savedMode = localStorage.getItem('darkMode');
-            if (savedMode === null || savedMode === 'enabled') {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('darkMode', 'enabled');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        })();
-    </script>
-</head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6 transition-colors duration-300">
-
-    <!-- ปุ่มสลับโหมดมืด/สว่าง -->
-    <button id="darkModeToggle" onclick="toggleDarkMode()" class="fixed top-4 right-4 p-3 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all z-50 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Toggle dark mode">
-        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
-        </svg>
-    </button>
-
-    <main class="w-full max-w-md space-y-8 flex-grow">
-         
-        <!-- Header & ส่วนจัดการชื่อผู้ใช้ (User Management) -->
-        <header class="text-center space-y-3">
-            <!-- แสดงชื่อผู้ใช้ปัจจุบัน -->
-            <div id="userBadge" class="hidden text-xs font-semibold bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-900/40 px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 mx-auto mb-1">
-                <span>🧘 ผู้ใช้งาน:</span>
-                <span id="userNameDisplay">--</span>
-                <button onclick="showNameInput()" class="ml-1 text-slate-400 hover:text-teal-600 underline font-normal">(เปลี่ยนชื่อ)</button>
-            </div>
-
-            <!-- กล่องกรอกชื่อกรณีระบบตรวจไม่เจอหรือต้องการระบุเอง -->
-            <div id="usernameBox" class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-dashed border-teal-200 dark:border-teal-900/60 max-w-sm mx-auto text-left space-y-2.5 hidden">
-                <label class="text-xs font-medium text-slate-500 dark:text-slate-400 block">กรอกชื่อผู้ใช้งานให้ตรงกับเว็บบันทึกสวดมนต์เพื่อซิงค์ข้อมูลลงคลาวด์:</label>
-                <div class="flex gap-2">
-                    <input type="text" id="customUsernameInput" placeholder="พิมพ์ชื่อผู้ใช้ของคุณที่นี่..." class="flex-grow bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white font-medium">
-                    <button onclick="saveCustomUsername()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm px-4 py-2 rounded-xl active:scale-95 transition-all">เชื่อมต่อ</button>
-                </div>
-            </div>
-
-            <h1 class="text-3xl font-semibold text-slate-900 dark:text-white pt-2">Meditation Timer</h1>
-            <p class="text-base text-slate-500 dark:text-slate-400">บันทึกเวลาแห่งความสงบของคุณ</p>
-        </header>
-
-        <!-- โหมดจับเวลาปัจจุบัน (Live Timer) -->
-        <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 text-center space-y-8 transition-colors duration-300">
-            <div id="statusIndicator" class="w-28 h-28 mx-auto bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center transition-all duration-700">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-             
-            <div class="space-y-2">
-                <h2 id="timerStatus" class="text-xl font-medium dark:text-slate-200 transition-colors duration-500">พร้อมเริ่มต้น</h2>
-                <p id="liveDuration" class="text-5xl font-light text-slate-400 dark:text-slate-500 tracking-wider">00:00</p>
-            </div>
-
-            <div id="startTimeCard" class="hidden transform translate-y-2 opacity-0 transition-all duration-500 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 text-sm font-medium py-2.5 px-5 rounded-2xl mx-auto inline-block border border-sky-100 dark:border-sky-900/50">
-                เวลาเริ่มต้นของคุณ <span id="startTimeDisplay" class="font-semibold">--:--</span> น.
-            </div>
-
-            <button id="toggleBtn" onclick="toggleTimer()" class="w-full py-4 rounded-2xl text-lg font-medium text-white bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all shadow-md">
-                เริ่มนั่งสมาธิ (เวลาปัจจุบัน)
-            </button>
-        </section>
-
-        <!-- โหมดระบุเวลาเอง (Manual Entry) -->
-        <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6 transition-colors duration-300">
-            <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ระบุเวลาด้วยตนเอง</h3>
-             
-            <div class="space-y-5">
-                <div class="flex flex-col gap-2">
-                    <div class="flex justify-between items-center">
-                        <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาเริ่ม</label>
-                        <button onclick="setCurrentTime('manualStart')" class="text-xs text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 active:scale-95 font-medium transition-all bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">
-                            เพิ่มเวลาตอนนี้
-                        </button>
-                    </div>
-                    <div class="w-full">
-                        <input type="time" id="manualStart" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
-                    </div>
-                </div>
-                 
-                <div class="flex flex-col gap-2">
-                    <div class="flex justify-between items-center">
-                        <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาสิ้นสุด</label>
-                        <button onclick="setCurrentTime('manualEnd')" class="text-xs text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 active:scale-95 font-medium transition-all bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">
-                            เพิ่มเวลาตอนนี้
-                        </button>
-                    </div>
-                    <div class="w-full">
-                        <input type="time" id="manualEnd" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
-                    </div>
-                </div>
-            </div>
-             
-            <button onclick="saveManualEntry()" class="w-full py-3.5 rounded-2xl text-base font-medium text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-all border border-teal-100 dark:border-teal-900/50">
-                คำนวณเวลา/บันทึกเวลา
-            </button>
-        </section>
-
-        <!-- ประวัติการใช้งาน (History) พร้อมปุ่มดาวน์โหลดข้อมูล -->
-        <section class="space-y-4 pt-2 pb-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-                <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ประวัติการนั่งสมาธิ</h3>
-                <div class="flex items-center gap-2">
-                    <button onclick="downloadHistoryFile()" title="ดาวน์โหลดประวัติเป็นไฟล์" class="p-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    </button>
-                    <span id="totalStats" class="text-sm font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">รวม 0 นาที</span>
-                </div>
-            </div>
-            <ul id="historyList" class="space-y-4">
-                <!-- ข้อมูลประวัติจะถูกเรนเดอร์ที่นี่ผ่าน JS/Firebase -->
-            </ul>
-        </section>
-    </main>
-
-    <footer class="w-full text-center py-6 text-sm text-slate-400 dark:text-slate-600 font-medium">
-        ©Apai
-    </footer>
-
-    <!-- กล่องแจ้งเตือน (Custom Premium Modal) -->
-    <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-100 dark:border-slate-800/80 shadow-2xl space-y-4 transform scale-95 transition-transform duration-300">
-            <div class="flex items-center gap-3">
-                <span id="modalIcon" class="text-2xl">💡</span>
-                <h4 id="modalTitle" class="text-lg font-semibold text-slate-950 dark:text-white">แจ้งเตือน</h4>
-            </div>
-            <p id="modalMessage" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p>
-            <div id="modalButtons" class="flex justify-end gap-2.5 pt-2"></div>
-        </div>
-    </div>
-
-   <script>
+<script>
     const firebaseConfig = {
         apiKey: "AIzaSyBW_KT7TJAThSg29gedQurkXhcTv5ACOmg",
         authDomain: "dharma-prayer.firebaseapp.com",
@@ -202,14 +14,20 @@
     }
     const database = firebase.database();
 
-        // ตัวแปรสถานะ
+    // ตัวแปรสถานะ
     let isMeditating = false;
     let startTime = null;
     let timerInterval = null;
     let history = []; 
     let rawEmail = localStorage.getItem('user_display_email') || '';
     let historyRef = null;
-       // เปลี่ยนอีเมลเป็น Path สำหรับ Firebase
+
+    // ตรวจสอบสถานะการล็อกอินทันทีที่โหลดหน้าเว็บ
+    document.addEventListener("DOMContentLoaded", () => {
+        checkLoginStatus();
+    });
+
+    // เปลี่ยนอีเมลเป็น Path สำหรับ Firebase
     function convertEmailToPath(email) {
         return email.trim().toLowerCase()
                     .replace(/@/g, '_at_')
@@ -217,7 +35,7 @@
                     .replace(/[#$\[\]]/g, "_");
     }
 
-    // ฟังก์ชันเชื่อมต่อและตรวจสอบ
+    // ฟังก์ชันเชื่อมต่อและตรวจสอบ (อัปเดตใหม่)
     async function saveCustomUsername() {
         const inputVal = customUsernameInput.value.trim().toLowerCase();
         if (!inputVal || !inputVal.includes('@')) {
@@ -227,11 +45,10 @@
 
         const safePath = convertEmailToPath(inputVal);
         
-        // ตรวจสอบใน Firebase ว่ามีข้อมูลยูเซอร์นี้อยู่ไหม
         try {
+            // ตรวจสอบใน Firebase ว่ามีข้อมูลอยู่ไหม
             const snapshot = await database.ref(`meditation_users/${safePath}`).once('value');
             
-            // ถ้าไม่มีข้อมูลในระบบ จะถือว่าเป็นผู้ใช้ใหม่ ระบบจะยอมให้เชื่อมต่อเพื่อสร้างประวัติใหม่
             localStorage.setItem('user_display_email', inputVal);
             localStorage.setItem('prayer_username', safePath);
             rawEmail = inputVal;
@@ -240,6 +57,7 @@
             checkLoginStatus();
             showCustomAlert('เชื่อมต่อสำเร็จ', `ยินดีต้อนรับคุณ ${inputVal} ระบบพร้อมใช้งานแล้วจ้ะ`, '✅');
         } catch (error) {
+            console.error(error);
             showCustomAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้', '❌');
         }
     }
@@ -256,318 +74,301 @@
         }
     }
 
-        function showNameInput() {
-            usernameBox.classList.toggle('hidden');
-            if (!usernameBox.classList.contains('hidden')) {
-                customUsernameInput.value = currentUsername;
+    function showNameInput() {
+        usernameBox.classList.toggle('hidden');
+        if (!usernameBox.classList.contains('hidden')) {
+            customUsernameInput.value = rawEmail; // แก้จาก currentUsername
+        }
+    }
+
+    function listenToFirebaseHistory() {
+        const safePath = localStorage.getItem('prayer_username');
+        if (!safePath) return;
+
+        historyRef = database.ref(`meditation_users/${safePath}/history`);
+        historyRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            history = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    history.push({ firebaseKey: key, ...data[key] });
+                });
+                history.sort((a, b) => b.id - a.id);
             }
+            renderHistory();
+        }, (error) => {
+            console.error(error);
+            showCustomAlert('Firebase Error', 'ไม่สามารถอ่านข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Rules บน Firebase Console', '❌');
+        });
+    }
+
+    // --- ส่วนการจัดการข้อมูลฝั่ง Local ที่ใช้ร่วมกัน ---
+    function updateMainAppStats(addedMinutes) {
+        let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
+        let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
+        localStorage.setItem('prayer_meditation_minutes', currentTotal + addedMinutes);
+        localStorage.setItem('prayer_meditation_count', currentCount + 1);
+        const todayStr = new Date().toLocaleDateString('en-CA'); 
+        localStorage.setItem('prayer_meditation_last_date', todayStr);
+    }
+
+    function deductFromMainAppStats(deductedMinutes) {
+        let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
+        let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
+        if (currentTotal > 0) localStorage.setItem('prayer_meditation_minutes', Math.max(0, currentTotal - deductedMinutes));
+        if (currentCount > 0) localStorage.setItem('prayer_meditation_count', Math.max(0, currentCount - 1));
+    }
+
+    // --- Custom Modal ---
+    function showCustomAlert(title, message, iconStr = '💡') {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalIcon.textContent = iconStr;
+        modalButtons.innerHTML = `<button onclick="closeCustomModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white transition-all active:scale-95">ตกลง</button>`;
+        openModal();
+    }
+
+    function showCustomConfirm(title, message, onConfirm, iconStr = '❓') {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalIcon.textContent = iconStr;
+        modalButtons.innerHTML = `
+            <button onclick="closeCustomModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">ยกเลิก</button>
+            <button id="modalConfirmBtn" class="px-5 py-2 rounded-xl text-sm font-semibold bg-rose-500 hover:bg-rose-600 text-white transition-all active:scale-95">ยืนยันลบ</button>
+        `;
+        document.getElementById('modalConfirmBtn').onclick = () => {
+            onConfirm();
+            closeCustomModal();
+        };
+        openModal();
+    }
+
+    function openModal() {
+        customModal.classList.remove('hidden');
+        setTimeout(() => { customModal.classList.add('opacity-100'); customModal.querySelector('div').classList.add('scale-100'); }, 10);
+    }
+
+    function closeCustomModal() {
+        customModal.classList.remove('opacity-100');
+        customModal.querySelector('div').classList.remove('scale-100');
+        setTimeout(() => { customModal.classList.add('hidden'); }, 300);
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !customModal.classList.contains('hidden')) closeCustomModal();
+    });
+
+    function toggleDarkMode() {
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('darkMode', 'disabled');
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('darkMode', 'enabled');
+        }
+    }
+
+    function setCurrentTime(inputId) {
+        const now = new Date();
+        document.getElementById(inputId).value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function formatMinutesToReadable(totalMinutes) {
+        const hours = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        let result = '';
+        if (hours > 0) result += `${hours} ชม. `;
+        if (mins > 0 || hours === 0) result += `${mins} นาที`;
+        return result;
+    }
+
+    // --- Live Timer Logic ---
+    function toggleTimer() {
+        if (!isMeditating) {
+            isMeditating = true;
+            startTime = new Date();
+            startTimeDisplay.textContent = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}`;
+            startTimeCard.classList.remove('hidden');
+            setTimeout(() => { startTimeCard.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+             
+            toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
+            toggleBtn.classList.replace('bg-teal-600', 'bg-sky-400');
+            toggleBtn.classList.replace('hover:bg-teal-700', 'hover:bg-sky-500');
+            statusIndicator.classList.add('breathing', 'bg-sky-100', 'text-sky-500');
+            statusIndicator.classList.remove('bg-teal-50', 'text-teal-600');
+            timerStatus.textContent = 'กำลังนั่งสมาธิ...';
+            timerStatus.classList.add('text-sky-600', 'dark:text-sky-400');
+
+            timerInterval = setInterval(updateLiveDuration, 1000);
+        } else {
+            isMeditating = false;
+            const endTime = new Date();
+            clearInterval(timerInterval);
+            const durationMinutes = Math.round((endTime - startTime) / 60000);
+             
+            if (durationMinutes > 0) {
+                saveSession(startTime, endTime, durationMinutes);
+            } else {
+                showCustomAlert('แจ้งเตือน', 'เวลาสั้นเกินไป (น้อยกว่า 1 นาที) จะไม่ถูกบันทึก', '⏳');
+            }
+
+            startTimeCard.classList.add('translate-y-2', 'opacity-0');
+            setTimeout(() => { startTimeCard.classList.add('hidden'); }, 500);
+            toggleBtn.textContent = 'เริ่มนั่งสมาธิ (เวลาปัจจุบัน)';
+            toggleBtn.classList.replace('bg-sky-400', 'bg-teal-600');
+            toggleBtn.classList.replace('hover:bg-sky-500', 'hover:bg-teal-700');
+            statusIndicator.classList.remove('breathing', 'bg-sky-100', 'text-sky-500');
+            statusIndicator.classList.add('bg-teal-50', 'text-teal-600');
+            timerStatus.textContent = 'พร้อมเริ่มต้น';
+            timerStatus.classList.remove('text-sky-600', 'dark:text-sky-400');
+            liveDuration.textContent = '00:00';
+        }
+    }
+
+    function updateLiveDuration() {
+        const diffSeconds = Math.floor((new Date() - startTime) / 1000);
+        liveDuration.textContent = `${String(Math.floor(diffSeconds / 60)).padStart(2, '0')}:${String(diffSeconds % 60).padStart(2, '0')}`;
+    }
+
+    // --- Manual Entry Logic ---
+    function saveManualEntry() {
+        const startInput = document.getElementById('manualStart').value;
+        const endInput = document.getElementById('manualEnd').value;
+        if (!startInput || !endInput) {
+            showCustomAlert('แจ้งเตือน', 'กรุณาระบุทั้งเวลาเริ่มและเวลาสิ้นสุด', '⚠️');
+            return;
+        }
+        const today = new Date().toISOString().split('T')[0];
+        const startObj = new Date(`${today}T${startInput}`);
+        let endObj = new Date(`${today}T${endInput}`);
+        if (endObj < startObj) endObj.setDate(endObj.getDate() + 1);
+
+        const durationMinutes = Math.round((endObj - startObj) / 60000);
+        if (durationMinutes === 0) {
+            showCustomAlert('แจ้งเตือน', 'เวลาเริ่มต้นและสิ้นสุดตรงกันพอดี กรุณาตรวจสอบอีกครั้ง', '⚠️');
+            return;
         }
 
-        function saveCustomUsername() {
-            const inputVal = customUsernameInput.value.trim();
-            if(inputVal === "") {
-                showCustomAlert('แจ้งเตือน', 'กรุณาระบุชื่อผู้ใช้งาน', '⚠️');
-                return;
-            }
-            localStorage.setItem('prayer_username', inputVal);
-            currentUsername = inputVal;
-            
-            // ยกเลิกการฟังข้อมูลพาธเดิมก่อนหน้า (ถ้ามี)
-            if (historyRef) historyRef.off();
-            
-            checkLoginStatus();
-            showCustomAlert('เชื่อมต่อสำเร็จ', `เชื่อมต่อกับฐานข้อมูลของ "${inputVal}" เรียบร้อยแล้วจ้า`, '⚡');
-        }
+        saveSession(startObj, endObj, durationMinutes);
+        document.getElementById('manualStart').value = '';
+        document.getElementById('manualEnd').value = '';
+    }
 
-        function listenToFirebaseHistory() {
-            const safePath = currentUsername.replace(/[.#$\[\]]/g, "_");
-            // อิงตามกฎข้อที่ 1 (โฟลเดอร์ meditation_users ชั้นนอกสุด)
-            historyRef = database.ref(`meditation_users/${safePath}/history`);
+    // --- Core Data & Firebase Logic ---
+    function saveSession(start, end, duration) {
+        const session = {
+            id: Date.now(),
+            date: start.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
+            startTime: start.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+            endTime: end.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+            duration: duration
+        };
+
+        const safePath = localStorage.getItem('prayer_username');
+        if (rawEmail && safePath) {
+            database.ref(`meditation_users/${safePath}/history`).push(session)
+                .then(() => {
+                    updateMainAppStats(duration);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showCustomAlert('ข้อผิดพลาด', 'ไม่สามารถเขียนข้อมูลได้ กรุณาตรวจสอบ Firebase Rules', '❌');
+                });
+        } else {
+            history.unshift(session);
+            localStorage.setItem('meditationHistory', JSON.stringify(history));
+            updateMainAppStats(duration);
+            renderHistory();
+        }
+    }
+
+    function deleteSession(sessionObj) {
+        showCustomConfirm('ยืนยันการลบ', 'คุณต้องการลบประวัติรายการนี้ใช่หรือไม่?', () => {
+            deductFromMainAppStats(sessionObj.duration);
             
-            historyRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                history = [];
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        history.push({ firebaseKey: key, ...data[key] });
-                    });
-                    history.sort((a, b) => b.id - a.id);
-                }
+            const safePath = localStorage.getItem('prayer_username');
+            if (rawEmail && safePath && sessionObj.firebaseKey) {
+                database.ref(`meditation_users/${safePath}/history/${sessionObj.firebaseKey}`).remove();
+            } else {
+                history = history.filter(session => session.id !== sessionObj.id);
+                localStorage.setItem('meditationHistory', JSON.stringify(history));
                 renderHistory();
-            }, (error) => {
-                console.error(error);
-                showCustomAlert('Firebase Error', 'ไม่สามารถอ่านข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Rules บน Firebase Console', '❌');
-            });
-        }
+            }
+        }, '🗑️');
+    }
 
-        function updateMainAppStats(addedMinutes) {
-            let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
-            let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
-            localStorage.setItem('prayer_meditation_minutes', currentTotal + addedMinutes);
-            localStorage.setItem('prayer_meditation_count', currentCount + 1);
-            const todayStr = new Date().toLocaleDateString('en-CA'); 
-            localStorage.setItem('prayer_meditation_last_date', todayStr);
+    function downloadHistoryFile() {
+        if (history.length === 0) {
+            showCustomAlert('แจ้งเตือน', 'ยังไม่มีข้อมูลบันทึกประวัติสำหรับการดาวน์โหลด', '📂');
+            return;
         }
+        const savedName = rawEmail || 'ผู้ใช้งานทั่วไป';
+        let totalMinutes = 0;
+        history.forEach(s => totalMinutes += s.duration);
 
-        function deductFromMainAppStats(deductedMinutes) {
-            let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
-            let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
-            if (currentTotal > 0) localStorage.setItem('prayer_meditation_minutes', Math.max(0, currentTotal - deductedMinutes));
-            if (currentCount > 0) localStorage.setItem('prayer_meditation_count', Math.max(0, currentCount - 1));
-        }
-
-        // Custom Modal
-        function showCustomAlert(title, message, iconStr = '💡') {
-            modalTitle.textContent = title;
-            modalMessage.textContent = message;
-            modalIcon.textContent = iconStr;
-            modalButtons.innerHTML = `<button onclick="closeCustomModal()" class="px-5 py-2 rounded-xl text-sm font-semibold bg-teal-600 hover:bg-teal-700 text-white transition-all active:scale-95">ตกลง</button>`;
-            openModal();
-        }
-
-        function showCustomConfirm(title, message, onConfirm, iconStr = '❓') {
-            modalTitle.textContent = title;
-            modalMessage.textContent = message;
-            modalIcon.textContent = iconStr;
-            modalButtons.innerHTML = `
-                <button onclick="closeCustomModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">ยกเลิก</button>
-                <button id="modalConfirmBtn" class="px-5 py-2 rounded-xl text-sm font-semibold bg-rose-500 hover:bg-rose-600 text-white transition-all active:scale-95">ยืนยันลบ</button>
-            `;
-            document.getElementById('modalConfirmBtn').onclick = () => {
-                onConfirm();
-                closeCustomModal();
-            };
-            openModal();
-        }
-
-        function openModal() {
-            customModal.classList.remove('hidden');
-            setTimeout(() => { customModal.classList.add('opacity-100'); customModal.querySelector('div').classList.add('scale-100'); }, 10);
-        }
-
-        function closeCustomModal() {
-            customModal.classList.remove('opacity-100');
-            customModal.querySelector('div').classList.remove('scale-100');
-            setTimeout(() => { customModal.classList.add('hidden'); }, 300);
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !customModal.classList.contains('hidden')) closeCustomModal();
+        let txtContent = `=========================================\n   บันทึกประวัติการนั่งสมาธิ - Meditation Timer\n=========================================\n`;
+        txtContent += `ผู้ใช้งาน: ${savedName}\nเวลารวมทั้งหมด: ${formatMinutesToReadable(totalMinutes)} (${totalMinutes} นาที)\nจำนวนครั้งทั้งหมด: ${history.length} ครั้ง\n\n[รายละเอียด]\n`;
+        history.forEach((session, index) => {
+            txtContent += `${index + 1}. วันที่: ${session.date} | เวลา: ${session.startTime} - ${session.endTime} น. | ระยะเวลา: ${formatMinutesToReadable(session.duration)}\n`;
         });
 
-        function toggleDarkMode() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('darkMode', 'disabled');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('darkMode', 'enabled');
-            }
-        }
+        const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `meditation_records_${new Date().toISOString().split('T')[0]}.txt`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
-        function setCurrentTime(inputId) {
-            const now = new Date();
-            document.getElementById(inputId).value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        }
+    function renderHistory() {
+        historyList.innerHTML = '';
+        let totalMinutes = 0;
 
-        function formatMinutesToReadable(totalMinutes) {
-            const hours = Math.floor(totalMinutes / 60);
-            const mins = totalMinutes % 60;
-            let result = '';
-            if (hours > 0) result += `${hours} ชม. `;
-            if (mins > 0 || hours === 0) result += `${mins} นาที`;
-            return result;
-        }
+        if (history.length === 0) {
+            historyList.innerHTML = '<li class="text-center text-base text-slate-400 dark:text-slate-500 py-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">ยังไม่มีประวัติการนั่งสมาธิ</li>';
+        } else {
+            const dailyTotals = {};
+            history.forEach(session => { dailyTotals[session.date] = (dailyTotals[session.date] || 0) + session.duration; });
 
-        // --- Live Timer Logic ---
-        function toggleTimer() {
-            if (!isMeditating) {
-                isMeditating = true;
-                startTime = new Date();
-                startTimeDisplay.textContent = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}`;
-                startTimeCard.classList.remove('hidden');
-                setTimeout(() => { startTimeCard.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+            let lastDate = null;
+            history.forEach(session => {
+                totalMinutes += session.duration;
                  
-                toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
-                toggleBtn.classList.replace('bg-teal-600', 'bg-sky-400');
-                toggleBtn.classList.replace('hover:bg-teal-700', 'hover:bg-sky-500');
-                statusIndicator.classList.add('breathing', 'bg-sky-100', 'text-sky-500');
-                statusIndicator.classList.remove('bg-teal-50', 'text-teal-600');
-                timerStatus.textContent = 'กำลังนั่งสมาธิ...';
-                timerStatus.classList.add('text-sky-600', 'dark:text-sky-400');
-
-                timerInterval = setInterval(updateLiveDuration, 1000);
-            } else {
-                isMeditating = false;
-                const endTime = new Date();
-                clearInterval(timerInterval);
-                const durationMinutes = Math.round((endTime - startTime) / 60000);
-                 
-                if (durationMinutes > 0) {
-                    saveSession(startTime, endTime, durationMinutes);
-                } else {
-                    showCustomAlert('แจ้งเตือน', 'เวลาสั้นเกินไป (น้อยกว่า 1 นาที) จะไม่ถูกบันทึก', '⏳');
-                }
-
-                startTimeCard.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => { startTimeCard.classList.add('hidden'); }, 500);
-                toggleBtn.textContent = 'เริ่มนั่งสมาธิ (เวลาปัจจุบัน)';
-                toggleBtn.classList.replace('bg-sky-400', 'bg-teal-600');
-                toggleBtn.classList.replace('hover:bg-sky-500', 'hover:bg-teal-700');
-                statusIndicator.classList.remove('breathing', 'bg-sky-100', 'text-sky-500');
-                statusIndicator.classList.add('bg-teal-50', 'text-teal-600');
-                timerStatus.textContent = 'พร้อมเริ่มต้น';
-                timerStatus.classList.remove('text-sky-600', 'dark:text-sky-400');
-                liveDuration.textContent = '00:00';
-            }
-        }
-
-        function updateLiveDuration() {
-            const diffSeconds = Math.floor((new Date() - startTime) / 1000);
-            liveDuration.textContent = `${String(Math.floor(diffSeconds / 60)).padStart(2, '0')}:${String(diffSeconds % 60).padStart(2, '0')}`;
-        }
-
-        // --- Manual Entry Logic ---
-        function saveManualEntry() {
-            const startInput = document.getElementById('manualStart').value;
-            const endInput = document.getElementById('manualEnd').value;
-            if (!startInput || !endInput) {
-                showCustomAlert('แจ้งเตือน', 'กรุณาระบุทั้งเวลาเริ่มและเวลาสิ้นสุด', '⚠️');
-                return;
-            }
-            const today = new Date().toISOString().split('T')[0];
-            const startObj = new Date(`${today}T${startInput}`);
-            let endObj = new Date(`${today}T${endInput}`);
-            if (endObj < startObj) endObj.setDate(endObj.getDate() + 1);
-
-            const durationMinutes = Math.round((endObj - startObj) / 60000);
-            if (durationMinutes === 0) {
-                showCustomAlert('แจ้งเตือน', 'เวลาเริ่มต้นและสิ้นสุดตรงกันพอดี กรุณาตรวจสอบอีกครั้ง', '⚠️');
-                return;
-            }
-
-            saveSession(startObj, endObj, durationMinutes);
-            document.getElementById('manualStart').value = '';
-            document.getElementById('manualEnd').value = '';
-        }
-
-        // --- Core Data & Firebase Logic ---
-        function saveSession(start, end, duration) {
-            const session = {
-                id: Date.now(),
-                date: start.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
-                startTime: start.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-                endTime: end.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-                duration: duration
-            };
-
-            if (currentUsername && currentUsername.trim() !== "") {
-                const safePath = currentUsername.replace(/[.#$\[\]]/g, "_");
-                database.ref(`meditation_users/${safePath}/history`).push(session)
-                    .then(() => {
-                        updateMainAppStats(duration);
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                        showCustomAlert('ข้อผิดพลาด', 'ไม่สามารถเขียนข้อมูลได้ กรุณาตรวจสอบ Firebase Rules', '❌');
-                    });
-            } else {
-                history.unshift(session);
-                localStorage.setItem('meditationHistory', JSON.stringify(history));
-                updateMainAppStats(duration);
-                renderHistory();
-            }
-        }
-
-        function deleteSession(sessionObj) {
-            showCustomConfirm('ยืนยันการลบ', 'คุณต้องการลบประวัติรายการนี้ใช่หรือไม่?', () => {
-                deductFromMainAppStats(sessionObj.duration);
-                
-                if (currentUsername && currentUsername.trim() !== "" && sessionObj.firebaseKey) {
-                    const safePath = currentUsername.replace(/[.#$\[\]]/g, "_");
-                    database.ref(`meditation_users/${safePath}/history/${sessionObj.firebaseKey}`).remove();
-                } else {
-                    history = history.filter(session => session.id !== sessionObj.id);
-                    localStorage.setItem('meditationHistory', JSON.stringify(history));
-                    renderHistory();
-                }
-            }, '🗑️');
-        }
-
-        function downloadHistoryFile() {
-            if (history.length === 0) {
-                showCustomAlert('แจ้งเตือน', 'ยังไม่มีข้อมูลบันทึกประวัติสำหรับการดาวน์โหลด', '📂');
-                return;
-            }
-            const savedName = currentUsername || 'ผู้ใช้งานทั่วไป';
-            let totalMinutes = 0;
-            history.forEach(s => totalMinutes += s.duration);
-
-            let txtContent = `=========================================\n   บันทึกประวัติการนั่งสมาธิ - Meditation Timer\n=========================================\n`;
-            txtContent += `ผู้ใช้งาน: ${savedName}\nเวลารวมทั้งหมด: ${formatMinutesToReadable(totalMinutes)} (${totalMinutes} นาที)\nจำนวนครั้งทั้งหมด: ${history.length} ครั้ง\n\n[รายละเอียด]\n`;
-            history.forEach((session, index) => {
-                txtContent += `${index + 1}. วันที่: ${session.date} | เวลา: ${session.startTime} - ${session.endTime} น. | ระยะเวลา: ${formatMinutesToReadable(session.duration)}\n`;
-            });
-
-            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `meditation_records_${new Date().toISOString().split('T')[0]}.txt`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function renderHistory() {
-            historyList.innerHTML = '';
-            let totalMinutes = 0;
-
-            if (history.length === 0) {
-                historyList.innerHTML = '<li class="text-center text-base text-slate-400 dark:text-slate-500 py-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">ยังไม่มีประวัติการนั่งสมาธิ</li>';
-            } else {
-                const dailyTotals = {};
-                history.forEach(session => { dailyTotals[session.date] = (dailyTotals[session.date] || 0) + session.duration; });
-
-                let lastDate = null;
-                history.forEach(session => {
-                    totalMinutes += session.duration;
-                     
-                    if (session.date !== lastDate) {
-                        lastDate = session.date;
-                        const dividerLi = document.createElement('li');
-                        dividerLi.className = 'pt-6 pb-2 first:pt-2 list-none';
-                        dividerLi.innerHTML = `
-                            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                                <span class="flex items-center gap-1.5"><span class="text-base">🍀</span><span>${session.date}</span></span>
-                                <span class="text-teal-600 dark:text-teal-400 font-medium">รวมวันนี้: ${formatMinutesToReadable(dailyTotals[session.date])}</span>
-                            </div>
-                        `;
-                        historyList.appendChild(dividerLi);
-                    }
-
-                    const li = document.createElement('li');
-                    li.className = 'bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center gap-4 transition-colors duration-300';
-                    li.innerHTML = `
-                        <div class="space-y-1">
-                            <p class="text-base font-medium text-slate-800 dark:text-slate-200">${session.date}</p>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">${session.startTime} - ${session.endTime}</p>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span class="text-lg font-semibold text-teal-600 dark:text-teal-400">${formatMinutesToReadable(session.duration)}</span>
-                            <button onclick="deleteSession(${JSON.stringify(session).replace(/"/g, '&quot;')})" class="text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors p-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
+                if (session.date !== lastDate) {
+                    lastDate = session.date;
+                    const dividerLi = document.createElement('li');
+                    dividerLi.className = 'pt-6 pb-2 first:pt-2 list-none';
+                    dividerLi.innerHTML = `
+                        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                            <span class="flex items-center gap-1.5"><span class="text-base">🍀</span><span>${session.date}</span></span>
+                            <span class="text-teal-600 dark:text-teal-400 font-medium">รวมวันนี้: ${formatMinutesToReadable(dailyTotals[session.date])}</span>
                         </div>
                     `;
-                    historyList.appendChild(li);
-                });
-            }
-            totalStats.textContent = `รวม ${formatMinutesToReadable(totalMinutes)}`;
+                    historyList.appendChild(dividerLi);
+                }
+
+                const li = document.createElement('li');
+                li.className = 'bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center gap-4 transition-colors duration-300';
+                li.innerHTML = `
+                    <div class="space-y-1">
+                        <p class="text-base font-medium text-slate-800 dark:text-slate-200">${session.date}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">${session.startTime} - ${session.endTime}</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-lg font-semibold text-teal-600 dark:text-teal-400">${formatMinutesToReadable(session.duration)}</span>
+                        <button onclick="deleteSession(${JSON.stringify(session).replace(/"/g, '&quot;')})" class="text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                historyList.appendChild(li);
+            });
         }
-    </script>
-</body>
-</html>
+        totalStats.textContent = `รวม ${formatMinutesToReadable(totalMinutes)}`;
+    }
+</script>
