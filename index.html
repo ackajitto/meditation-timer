@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meditation Timer | บันทึกการนั่งสมาธิ</title>
-    <!-- นำเข้า Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // ตั้งค่า Tailwind ให้รองรับ Class-based Dark Mode
@@ -12,7 +11,6 @@
             darkMode: 'class'
         }
     </script>
-    <!-- นำเข้าฟอนต์ Prompt -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
@@ -59,13 +57,10 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6 transition-colors duration-300">
 
-    <!-- ปุ่มสลับโหมดมืด/สว่าง -->
     <button id="darkModeToggle" onclick="toggleDarkMode()" class="fixed top-4 right-4 p-3 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all z-50 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Toggle dark mode">
-        <!-- ไอคอนพระจันทร์ (แสดงตอนโหมดสว่าง) -->
         <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
         </svg>
-        <!-- ไอคอนพระอาทิตย์ (แสดงตอนโหมดมืด) -->
         <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
         </svg>
@@ -73,15 +68,16 @@
 
     <main class="w-full max-w-md space-y-8 flex-grow">
          
-        <!-- Header -->
         <header class="text-center space-y-3">
+            <div id="userBadge" class="hidden text-xs font-semibold bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-900/40 px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 mx-auto mb-1">
+                <span>🧘 ผู้ใช้งาน:</span>
+                <span id="userNameDisplay">--</span>
+            </div>
             <h1 class="text-3xl font-semibold text-slate-900 dark:text-white">Meditation Timer</h1>
             <p class="text-base text-slate-500 dark:text-slate-400">บันทึกเวลาแห่งความสงบของคุณ</p>
         </header>
 
-        <!-- โหมดจับเวลาปัจจุบัน (Live Timer) -->
         <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 text-center space-y-8 transition-colors duration-300">
-            <!-- วงกลมสัญลักษณ์สมาธิ -->
             <div id="statusIndicator" class="w-28 h-28 mx-auto bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center transition-all duration-700">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -93,23 +89,19 @@
                 <p id="liveDuration" class="text-5xl font-light text-slate-400 dark:text-slate-500 tracking-wider">00:00</p>
             </div>
 
-            <!-- การ์ดเวลาเริ่มต้น -->
             <div id="startTimeCard" class="hidden transform translate-y-2 opacity-0 transition-all duration-500 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 text-sm font-medium py-2.5 px-5 rounded-2xl mx-auto inline-block border border-sky-100 dark:border-sky-900/50">
                 เวลาเริ่มต้นของคุณ <span id="startTimeDisplay" class="font-semibold">--:--</span> น.
             </div>
 
-            <!-- ปุ่มหลัก -->
             <button id="toggleBtn" onclick="toggleTimer()" class="w-full py-4 rounded-2xl text-lg font-medium text-white bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all shadow-md">
                 เริ่มนั่งสมาธิ (เวลาปัจจุบัน)
             </button>
         </section>
 
-        <!-- โหมดระบุเวลาเอง (Manual Entry) -->
         <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6 transition-colors duration-300">
             <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ระบุเวลาด้วยตนเอง</h3>
              
             <div class="space-y-5">
-                <!-- เวลาเริ่ม -->
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-center">
                         <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาเริ่ม</label>
@@ -117,13 +109,11 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <!-- เคลียร์คำสั่งครอบกันขอบล้นตัวเก่าออก และปล่อยให้ขยายสมมาตรซ้ายขวาอย่างเท่าเทียม -->
                     <div class="w-full">
                         <input type="time" id="manualStart" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
                  
-                <!-- เวลาสิ้นสุด -->
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-center">
                         <label class="text-sm text-slate-600 dark:text-slate-400 font-medium">เวลาสิ้นสุด</label>
@@ -131,37 +121,31 @@
                             เพิ่มเวลาตอนนี้
                         </button>
                     </div>
-                    <!-- เคลียร์คำสั่งครอบกันขอบล้นตัวเก่าออก และปล่อยให้ขยายสมมาตรซ้ายขวาอย่างเท่าเทียม -->
                     <div class="w-full">
                         <input type="time" id="manualEnd" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-center focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium dark:text-white">
                     </div>
                 </div>
             </div>
              
-            <!-- ปุ่มคำนวณเวลา -->
             <button onclick="saveManualEntry()" class="w-full py-3.5 rounded-2xl text-base font-medium text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-all border border-teal-100 dark:border-teal-900/50">
                 คำนวณเวลา/บันทึกเวลา
             </button>
         </section>
 
-        <!-- ประวัติการใช้งาน (History) -->
         <section class="space-y-4 pt-2 pb-6">
             <div class="flex justify-between items-center">
                 <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ประวัติการนั่งสมาธิ</h3>
                 <span id="totalStats" class="text-sm font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">รวม 0 นาที</span>
             </div>
             <ul id="historyList" class="space-y-4">
-                <!-- ข้อมูลประวัติจะถูกเรนเดอร์ที่นี่ผ่าน JS -->
-            </ul>
+                </ul>
         </section>
     </main>
 
-    <!-- ส่วนเครดิตด้านล่างสุด -->
     <footer class="w-full text-center py-6 text-sm text-slate-400 dark:text-slate-600 font-medium">
         ©Apai
     </footer>
 
-    <!-- กล่องแจ้งเตือนความงามระดับพรีเมียม (Custom Premium Modal) แทนการใช้ alert/confirm แบบเก่า -->
     <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-100 dark:border-slate-800/80 shadow-2xl space-y-4 transform scale-95 transition-transform duration-300">
             <div class="flex items-center gap-3">
@@ -170,8 +154,7 @@
             </div>
             <p id="modalMessage" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p>
             <div id="modalButtons" class="flex justify-end gap-2.5 pt-2">
-                <!-- ปุ่มจะเปลี่ยนไปตามรูปแบบ alert หรือ confirm -->
-            </div>
+                </div>
         </div>
     </div>
 
@@ -199,8 +182,52 @@
         const modalButtons = document.getElementById('modalButtons');
         const modalIcon = document.getElementById('modalIcon');
 
+        // Elements ใหม่สำหรับแสดงชื่อล็อกอิน
+        const userBadge = document.getElementById('userBadge');
+        const userNameDisplay = document.getElementById('userNameDisplay');
+
         // Initialize
+        checkLoginStatus();
         renderHistory();
+
+        // 🔗 ฟังก์ชันดึงและแสดงชื่อที่ล็อกอินค้างไว้จากเว็บหลักสวดมนต์
+        function checkLoginStatus() {
+            const savedName = localStorage.getItem('prayer_username');
+            if (savedName && savedName.trim() !== "") {
+                userNameDisplay.textContent = savedName;
+                userBadge.classList.remove('hidden');
+            } else {
+                userBadge.classList.add('hidden');
+            }
+        }
+
+        // 🔄 ฟังก์ชันส่งเวลาสมาธิไปรวมสะสมในระบบล็อกอินของหน้าเว็บหลักสวดมนต์
+        function updateMainAppStats(addedMinutes) {
+            // ดึงจำนวนเวลานั่งสะสมเดิมจากระบบหน้าหลัก (ตัวแปรเดียวกับที่หน้าหลักใช้เซฟ)
+            let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
+            let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
+
+            // บวกจำนวนนาทีและจำนวนครั้งเพิ่มเข้าไป
+            localStorage.setItem('prayer_meditation_minutes', currentTotal + addedMinutes);
+            localStorage.setItem('prayer_meditation_count', currentCount + 1);
+
+            // แจ้งระบบหน้าหลักว่าวันนี้มีการทำกิจกรรมสมาธิแล้ว (เพื่อให้ระบบปฏิทิน / Streak ทำงานต่อได้)
+            const todayStr = new Date().toLocaleDateString('en-CA'); // รูปแบบ YYYY-MM-DD
+            localStorage.setItem('prayer_meditation_last_date', todayStr);
+        }
+
+        // 🔄 ฟังก์ชันหักลบเวลาออกจากหน้าเว็บหลัก กรณีผู้ใช้กดยืนยันลบรายการประวัติ
+        function deductFromMainAppStats(deductedMinutes) {
+            let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
+            let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
+
+            if (currentTotal > 0) {
+                localStorage.setItem('prayer_meditation_minutes', Math.max(0, currentTotal - deductedMinutes));
+            }
+            if (currentCount > 0) {
+                localStorage.setItem('prayer_meditation_count', Math.max(0, currentCount - 1));
+            }
+        }
 
         // ฟังก์ชันควบคุม Custom Modal ทดแทนเบราว์เซอร์ดีฟอลต์
         function showCustomAlert(title, message, iconStr = '💡') {
@@ -215,6 +242,7 @@
             openModal();
         }
 
+        // แก้ไขปุ่มสีส้ม/แดงเพื่อให้เข้ากับธีมรวม
         function showCustomConfirm(title, message, onConfirm, iconStr = '❓') {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
@@ -388,11 +416,20 @@
 
             history.unshift(session);
             localStorage.setItem('meditationHistory', JSON.stringify(history));
+            
+            // 🔗 ส่งข้อมูลไปบันทึกเพิ่มในสถิติของหน้าหลักล็อกอินสวดมนต์ด้วย
+            updateMainAppStats(duration);
+
             renderHistory();
         }
 
         function deleteSession(id) {
+            const sessionToDelete = history.find(session => session.id === id);
             showCustomConfirm('ยืนยันการลบ', 'คุณต้องการลบประวัติรายการนี้ใช่หรือไม่?', () => {
+                if (sessionToDelete) {
+                    // 🔄 หักลบเวลาออกจากระบบล็อกอินหน้าหลักด้วยเพื่อความแม่นยำ
+                    deductFromMainAppStats(sessionToDelete.duration);
+                }
                 history = history.filter(session => session.id !== id);
                 localStorage.setItem('meditationHistory', JSON.stringify(history));
                 renderHistory();
