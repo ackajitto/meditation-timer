@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meditation Timer | บันทึกการนั่งสมาธิ</title>
+    <!-- นำเข้า Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class'
         }
     </script>
+    <!-- นำเข้าฟอนต์ Prompt -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     
+    <!-- นำเข้า Firebase App และ Database SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
@@ -43,7 +46,7 @@
         }
     </style>
     <script>
-        // ตั้งค่าหน้าแรกเริ่มต้นเป็นโหมดมืด (Dark Mode) เสมอ
+        // ตั้งค่าเริ่มต้นเป็นโหมดมืด (Dark Mode) เสมอ
         (function() {
             const savedMode = localStorage.getItem('darkMode');
             if (savedMode === null || savedMode === 'enabled') {
@@ -57,6 +60,7 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6 transition-colors duration-300">
 
+    <!-- ปุ่มสลับโหมดมืด/สว่าง -->
     <button id="darkModeToggle" onclick="toggleDarkMode()" class="fixed top-4 right-4 p-3 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all z-50 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Toggle dark mode">
         <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
@@ -68,15 +72,29 @@
 
     <main class="w-full max-w-md space-y-8 flex-grow">
          
+        <!-- Header & ส่วนจัดการชื่อผู้ใช้ (User Management) -->
         <header class="text-center space-y-3">
+            <!-- แสดงชื่อผู้ใช้ปัจจุบัน -->
             <div id="userBadge" class="hidden text-xs font-semibold bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-900/40 px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 mx-auto mb-1">
                 <span>🧘 ผู้ใช้งาน:</span>
                 <span id="userNameDisplay">--</span>
+                <button onclick="showNameInput()" class="ml-1 text-slate-400 hover:text-teal-600 underline font-normal">(เปลี่ยนชื่อ)</button>
             </div>
-            <h1 class="text-3xl font-semibold text-slate-900 dark:text-white">Meditation Timer</h1>
+
+            <!-- กล่องกรอกชื่อกรณีระบบตรวจไม่เจอหรือต้องการระบุเอง -->
+            <div id="usernameBox" class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-dashed border-teal-200 dark:border-teal-900/60 max-w-sm mx-auto text-left space-y-2.5 hidden">
+                <label class="text-xs font-medium text-slate-500 dark:text-slate-400 block">กรอกชื่อผู้ใช้งานให้ตรงกับเว็บบันทึกสวดมนต์เพื่อซิงค์ข้อมูลลงคลาวด์:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="customUsernameInput" placeholder="พิมพ์ชื่อผู้ใช้ของคุณที่นี่..." class="flex-grow bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-white font-medium">
+                    <button onclick="saveCustomUsername()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm px-4 py-2 rounded-xl active:scale-95 transition-all">เชื่อมต่อ</button>
+                </div>
+            </div>
+
+            <h1 class="text-3xl font-semibold text-slate-900 dark:text-white pt-2">Meditation Timer</h1>
             <p class="text-base text-slate-500 dark:text-slate-400">บันทึกเวลาแห่งความสงบของคุณ</p>
         </header>
 
+        <!-- โหมดจับเวลาปัจจุบัน (Live Timer) -->
         <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 text-center space-y-8 transition-colors duration-300">
             <div id="statusIndicator" class="w-28 h-28 mx-auto bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center transition-all duration-700">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,6 +116,7 @@
             </button>
         </section>
 
+        <!-- โหมดระบุเวลาเอง (Manual Entry) -->
         <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-6 transition-colors duration-300">
             <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ระบุเวลาด้วยตนเอง</h3>
              
@@ -132,6 +151,7 @@
             </button>
         </section>
 
+        <!-- ประวัติการใช้งาน (History) พร้อมปุ่มดาวน์โหลดข้อมูล -->
         <section class="space-y-4 pt-2 pb-6">
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
                 <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ประวัติการนั่งสมาธิ</h3>
@@ -145,7 +165,8 @@
                 </div>
             </div>
             <ul id="historyList" class="space-y-4">
-                </ul>
+                <!-- ข้อมูลประวัติจะถูกเรนเดอร์ที่นี่ผ่าน JS/Firebase -->
+            </ul>
         </section>
     </main>
 
@@ -153,6 +174,7 @@
         ©Apai
     </footer>
 
+    <!-- กล่องแจ้งเตือน (Custom Premium Modal) -->
     <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-100 dark:border-slate-800/80 shadow-2xl space-y-4 transform scale-95 transition-transform duration-300">
             <div class="flex items-center gap-3">
@@ -165,7 +187,6 @@
     </div>
 
     <script>
-        // 🔄 อัปเดตข้อมูล Firebase Config ของโปรเจกต์คุณเรียบร้อยแล้วจ้ะ
         const firebaseConfig = {
             apiKey: "AIzaSyBW_KT7TJAThSg29gedQurkXhcTv5ACOmg",
             authDomain: "dharma-prayer.firebaseapp.com",
@@ -188,6 +209,7 @@
         let timerInterval = null;
         let history = []; 
         let currentUsername = localStorage.getItem('prayer_username') || '';
+        let historyRef = null;
 
         // DOM Elements
         const toggleBtn = document.getElementById('toggleBtn');
@@ -205,6 +227,8 @@
         const modalIcon = document.getElementById('modalIcon');
         const userBadge = document.getElementById('userBadge');
         const userNameDisplay = document.getElementById('userNameDisplay');
+        const usernameBox = document.getElementById('usernameBox');
+        const customUsernameInput = document.getElementById('customUsernameInput');
 
         // Initialize App
         checkLoginStatus();
@@ -213,18 +237,44 @@
             if (currentUsername && currentUsername.trim() !== "") {
                 userNameDisplay.textContent = currentUsername;
                 userBadge.classList.remove('hidden');
-                // ดึงข้อมูลแบบเรียลไทม์ผ่าน Firebase
+                usernameBox.classList.add('hidden');
                 listenToFirebaseHistory();
             } else {
                 userBadge.classList.add('hidden');
+                usernameBox.classList.remove('hidden');
+                // ดึงข้อมูลออฟไลน์ชั่วคราว
                 history = JSON.parse(localStorage.getItem('meditationHistory')) || [];
                 renderHistory();
             }
         }
 
+        function showNameInput() {
+            usernameBox.classList.toggle('hidden');
+            if (!usernameBox.classList.contains('hidden')) {
+                customUsernameInput.value = currentUsername;
+            }
+        }
+
+        function saveCustomUsername() {
+            const inputVal = customUsernameInput.value.trim();
+            if(inputVal === "") {
+                showCustomAlert('แจ้งเตือน', 'กรุณาระบุชื่อผู้ใช้งาน', '⚠️');
+                return;
+            }
+            localStorage.setItem('prayer_username', inputVal);
+            currentUsername = inputVal;
+            
+            // ยกเลิกการฟังข้อมูลพาธเดิมก่อนหน้า (ถ้ามี)
+            if (historyRef) historyRef.off();
+            
+            checkLoginStatus();
+            showCustomAlert('เชื่อมต่อสำเร็จ', `เชื่อมต่อกับฐานข้อมูลของ "${inputVal}" เรียบร้อยแล้วจ้า`, '⚡');
+        }
+
         function listenToFirebaseHistory() {
             const safePath = currentUsername.replace(/[.#$\[\]]/g, "_");
-            const historyRef = database.ref(`meditation_users/${safePath}/history`);
+            // อิงตามกฎข้อที่ 1 (โฟลเดอร์ meditation_users ชั้นนอกสุด)
+            historyRef = database.ref(`meditation_users/${safePath}/history`);
             
             historyRef.on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -236,6 +286,9 @@
                     history.sort((a, b) => b.id - a.id);
                 }
                 renderHistory();
+            }, (error) => {
+                console.error(error);
+                showCustomAlert('Firebase Error', 'ไม่สามารถอ่านข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Rules บน Firebase Console', '❌');
             });
         }
 
@@ -403,8 +456,13 @@
             if (currentUsername && currentUsername.trim() !== "") {
                 const safePath = currentUsername.replace(/[.#$\[\]]/g, "_");
                 database.ref(`meditation_users/${safePath}/history`).push(session)
-                    .then(() => updateMainAppStats(duration))
-                    .catch(() => showCustomAlert('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลเพื่อบันทึกได้', '❌'));
+                    .then(() => {
+                        updateMainAppStats(duration);
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        showCustomAlert('ข้อผิดพลาด', 'ไม่สามารถเขียนข้อมูลได้ กรุณาตรวจสอบ Firebase Rules', '❌');
+                    });
             } else {
                 history.unshift(session);
                 localStorage.setItem('meditationHistory', JSON.stringify(history));
