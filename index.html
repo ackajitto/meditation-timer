@@ -22,7 +22,7 @@
             50% { transform: scale(1.06); opacity: 1; box-shadow: 0 0 30px 20px rgba(56, 189, 248, 0.25); }
         }
         
-        /* จัดการหน้าตากล่องเวลาให้คงที่และเสถียรบน iOS Safari */
+        /* จัดการหน้าตกล่องเวลาให้คงที่และเสถียรบน iOS Safari */
         input[type="time"] {
             box-sizing: border-box;
             width: 100%;
@@ -44,11 +44,12 @@
         }
     </style>
     <script>
-        // หน้าหลักเริ่มต้นที่โหมดสว่างเสมอ
+        // ตั้งค่าหน้าแรกเริ่มต้นเป็นโหมดมืด (Dark Mode) เสมอ
         (function() {
-            const isDark = localStorage.getItem('darkMode') === 'enabled';
-            if (isDark) {
+            const savedMode = localStorage.getItem('darkMode');
+            if (savedMode === null || savedMode === 'enabled') {
                 document.documentElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'enabled');
             } else {
                 document.documentElement.classList.remove('dark');
             }
@@ -133,9 +134,16 @@
         </section>
 
         <section class="space-y-4 pt-2 pb-6">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
                 <h3 class="text-lg font-medium text-slate-800 dark:text-slate-200">ประวัติการนั่งสมาธิ</h3>
-                <span id="totalStats" class="text-sm font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">รวม 0 นาที</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadHistoryFile()" title="ดาวน์โหลดประวัติเป็นไฟล์" class="p-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </button>
+                    <span id="totalStats" class="text-sm font-medium text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-1.5 rounded-lg border border-teal-100 dark:border-teal-900/50">รวม 0 นาที</span>
+                </div>
             </div>
             <ul id="historyList" class="space-y-4">
                 </ul>
@@ -153,8 +161,7 @@
                 <h4 id="modalTitle" class="text-lg font-semibold text-slate-950 dark:text-white">แจ้งเตือน</h4>
             </div>
             <p id="modalMessage" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p>
-            <div id="modalButtons" class="flex justify-end gap-2.5 pt-2">
-                </div>
+            <div id="modalButtons" class="flex justify-end gap-2.5 pt-2"></div>
         </div>
     </div>
 
@@ -182,7 +189,6 @@
         const modalButtons = document.getElementById('modalButtons');
         const modalIcon = document.getElementById('modalIcon');
 
-        // Elements ใหม่สำหรับแสดงชื่อล็อกอิน
         const userBadge = document.getElementById('userBadge');
         const userNameDisplay = document.getElementById('userNameDisplay');
 
@@ -190,7 +196,6 @@
         checkLoginStatus();
         renderHistory();
 
-        // 🔗 ฟังก์ชันดึงและแสดงชื่อที่ล็อกอินค้างไว้จากเว็บหลักสวดมนต์
         function checkLoginStatus() {
             const savedName = localStorage.getItem('prayer_username');
             if (savedName && savedName.trim() !== "") {
@@ -201,22 +206,17 @@
             }
         }
 
-        // 🔄 ฟังก์ชันส่งเวลาสมาธิไปรวมสะสมในระบบล็อกอินของหน้าเว็บหลักสวดมนต์
         function updateMainAppStats(addedMinutes) {
-            // ดึงจำนวนเวลานั่งสะสมเดิมจากระบบหน้าหลัก (ตัวแปรเดียวกับที่หน้าหลักใช้เซฟ)
             let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
             let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
 
-            // บวกจำนวนนาทีและจำนวนครั้งเพิ่มเข้าไป
             localStorage.setItem('prayer_meditation_minutes', currentTotal + addedMinutes);
             localStorage.setItem('prayer_meditation_count', currentCount + 1);
 
-            // แจ้งระบบหน้าหลักว่าวันนี้มีการทำกิจกรรมสมาธิแล้ว (เพื่อให้ระบบปฏิทิน / Streak ทำงานต่อได้)
-            const todayStr = new Date().toLocaleDateString('en-CA'); // รูปแบบ YYYY-MM-DD
+            const todayStr = new Date().toLocaleDateString('en-CA'); 
             localStorage.setItem('prayer_meditation_last_date', todayStr);
         }
 
-        // 🔄 ฟังก์ชันหักลบเวลาออกจากหน้าเว็บหลัก กรณีผู้ใช้กดยืนยันลบรายการประวัติ
         function deductFromMainAppStats(deductedMinutes) {
             let currentTotal = parseInt(localStorage.getItem('prayer_meditation_minutes')) || 0;
             let currentCount = parseInt(localStorage.getItem('prayer_meditation_count')) || 0;
@@ -229,7 +229,7 @@
             }
         }
 
-        // ฟังก์ชันควบคุม Custom Modal ทดแทนเบราว์เซอร์ดีฟอลต์
+        // Custom Modal
         function showCustomAlert(title, message, iconStr = '💡') {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
@@ -242,7 +242,6 @@
             openModal();
         }
 
-        // แก้ไขปุ่มสีส้ม/แดงเพื่อให้เข้ากับธีมรวม
         function showCustomConfirm(title, message, onConfirm, iconStr = '❓') {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
@@ -262,6 +261,12 @@
             openModal();
         }
 
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !customModal.classList.contains('hidden')) {
+                closeCustomModal();
+            }
+        });
+
         function openModal() {
             customModal.classList.remove('hidden');
             setTimeout(() => {
@@ -278,7 +283,6 @@
             }, 300);
         }
 
-        // ฟังก์ชันสลับโหมดมืด / โหมดสว่าง
         function toggleDarkMode() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
@@ -289,7 +293,6 @@
             }
         }
 
-        // ฟังก์ชันช่วยดึงเวลาปัจจุบันใส่ใน Input ช่องระบุเวลาเอง
         function setCurrentTime(inputId) {
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
@@ -297,11 +300,9 @@
             document.getElementById(inputId).value = `${hours}:${minutes}`;
         }
 
-        // ฟังก์ชันแปลงนาทีรวม ให้กลายเป็นหน่วย ชั่วโมง และ นาที ที่เข้าใจง่าย
         function formatMinutesToReadable(totalMinutes) {
             const hours = Math.floor(totalMinutes / 60);
             const mins = totalMinutes % 60;
-             
             let result = '';
             if (hours > 0) result += `${hours} ชม. `;
             if (mins > 0 || hours === 0) result += `${mins} นาที`;
@@ -417,9 +418,7 @@
             history.unshift(session);
             localStorage.setItem('meditationHistory', JSON.stringify(history));
             
-            // 🔗 ส่งข้อมูลไปบันทึกเพิ่มในสถิติของหน้าหลักล็อกอินสวดมนต์ด้วย
             updateMainAppStats(duration);
-
             renderHistory();
         }
 
@@ -427,13 +426,58 @@
             const sessionToDelete = history.find(session => session.id === id);
             showCustomConfirm('ยืนยันการลบ', 'คุณต้องการลบประวัติรายการนี้ใช่หรือไม่?', () => {
                 if (sessionToDelete) {
-                    // 🔄 หักลบเวลาออกจากระบบล็อกอินหน้าหลักด้วยเพื่อความแม่นยำ
                     deductFromMainAppStats(sessionToDelete.duration);
                 }
                 history = history.filter(session => session.id !== id);
                 localStorage.setItem('meditationHistory', JSON.stringify(history));
                 renderHistory();
             }, '🗑️');
+        }
+
+        // ✨ เพิ่มใหม่: ฟังก์ชันสำหรับประมวลผลข้อมูลและดาวน์โหลดเป็นไฟล์ .txt
+        function downloadHistoryFile() {
+            if (history.length === 0) {
+                showCustomAlert('แจ้งเตือน', 'ยังไม่มีข้อมูลบันทึกประวัติสำหรับการดาวน์โหลด', '📂');
+                return;
+            }
+
+            const savedName = localStorage.getItem('prayer_username') || 'ผู้ใช้งานทั่วไป';
+            let totalMinutes = 0;
+            history.forEach(s => totalMinutes += s.duration);
+
+            let txtContent = `=========================================\n`;
+            txtContent += `   บันทึกประวัติการนั่งสมาธิ - Meditation Timer\n`;
+            txtContent += `=========================================\n`;
+            txtContent += `ผู้ใช้งาน: ${savedName}\n`;
+            txtContent += `เวลารวมทั้งหมด: ${formatMinutesToReadable(totalMinutes)} (${totalMinutes} นาที)\n`;
+            txtContent += `จำนวนครั้งที่บันทึกทั้งหมด: ${history.length} ครั้ง\n`;
+            txtContent += `วันที่ส่งออกข้อมูล: ${new Date().toLocaleDateString('th-TH')} เวลา ${new Date().toLocaleTimeString('th-TH')} น.\n`;
+            txtContent += `-----------------------------------------\n\n`;
+            txtContent += `[รายละเอียดรายรายการบันทึก]\n`;
+
+            history.forEach((session, index) => {
+                txtContent += `${index + 1}. วันที่: ${session.date}\n`;
+                txtContent += `   ช่วงเวลา: ${session.startTime} - ${session.endTime} น.\n`;
+                txtContent += `   ระยะเวลา: ${formatMinutesToReadable(session.duration)}\n`;
+                txtContent += `   -------------------------------------\n`;
+            });
+
+            txtContent += `\n© ขออนุโมทนาบุญในการปฏิบัติจิตตภาวนาในครั้งนี้ด้วยครับ`;
+
+            // สร้าง File Blob และสั่งดาวน์โหลด
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            // ตั้งชื่อไฟล์ เช่น meditation_records_2026-06-14.txt
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.setAttribute("href", url);
+            link.setAttribute("download", `meditation_records_${dateStr}.txt`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function renderHistory() {
@@ -443,7 +487,6 @@
             if (history.length === 0) {
                 historyList.innerHTML = '<li class="text-center text-base text-slate-400 dark:text-slate-500 py-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">ยังไม่มีประวัติการนั่งสมาธิ</li>';
             } else {
-                // คำนวณเวลารวมแยกแต่ละวันไว้ล่วงหน้า
                 const dailyTotals = {};
                 history.forEach(session => {
                     dailyTotals[session.date] = (dailyTotals[session.date] || 0) + session.duration;
@@ -453,7 +496,6 @@
                 history.forEach(session => {
                     totalMinutes += session.duration;
                      
-                    // หากเป็นวันใหม่ ให้แทรกแถวหัวข้อคั่นเพื่อแบ่งวัน และแสดงเวลารวมของวันนั้น
                     if (session.date !== lastDate) {
                         lastDate = session.date;
                         const dividerLi = document.createElement('li');
@@ -472,7 +514,6 @@
 
                     const li = document.createElement('li');
                     li.className = 'bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex justify-between items-center gap-4 transition-colors duration-300';
-                     
                     const readableDuration = formatMinutesToReadable(session.duration);
                      
                     li.innerHTML = `
@@ -492,7 +533,6 @@
                     historyList.appendChild(li);
                 });
             }
-             
             totalStats.textContent = `รวม ${formatMinutesToReadable(totalMinutes)}`;
         }
     </script>
