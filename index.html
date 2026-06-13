@@ -186,67 +186,75 @@
         </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBW_KT7TJAThSg29gedQurkXhcTv5ACOmg",
-            authDomain: "dharma-prayer.firebaseapp.com",
-            databaseURL: "https://dharma-prayer-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "dharma-prayer",
-            storageBucket: "dharma-prayer.firebasestorage.app",
-            messagingSenderId: "4576358277",
-            appId: "1:4576358277:web:17240edf90e461cb489eec"
-        };
+   <script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBW_KT7TJAThSg29gedQurkXhcTv5ACOmg",
+        authDomain: "dharma-prayer.firebaseapp.com",
+        databaseURL: "https://dharma-prayer-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "dharma-prayer",
+        storageBucket: "dharma-prayer.firebasestorage.app",
+        messagingSenderId: "4576358277",
+        appId: "1:4576358277:web:17240edf90e461cb489eec"
+    };
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const database = firebase.database();
+
+        // ตัวแปรสถานะ
+    let isMeditating = false;
+    let startTime = null;
+    let timerInterval = null;
+    let history = []; 
+    let rawEmail = localStorage.getItem('user_display_email') || '';
+    let historyRef = null;
+       // เปลี่ยนอีเมลเป็น Path สำหรับ Firebase
+    function convertEmailToPath(email) {
+        return email.trim().toLowerCase()
+                    .replace(/@/g, '_at_')
+                    .replace(/\./g, '_dot_')
+                    .replace(/[#$\[\]]/g, "_");
+    }
+
+    // ฟังก์ชันเชื่อมต่อและตรวจสอบ
+    async function saveCustomUsername() {
+        const inputVal = customUsernameInput.value.trim().toLowerCase();
+        if (!inputVal || !inputVal.includes('@')) {
+            showCustomAlert('แจ้งเตือน', 'กรุณากรอกอีเมลให้ถูกต้องจ้ะ', '⚠️');
+            return;
         }
-        const database = firebase.database();
 
-        // State Management
-        let isMeditating = false;
-        let startTime = null;
-        let timerInterval = null;
-        let history = []; 
-        let currentUsername = localStorage.getItem('prayer_username') || '';
-        let historyRef = null;
-
-        // DOM Elements
-        const toggleBtn = document.getElementById('toggleBtn');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const timerStatus = document.getElementById('timerStatus');
-        const liveDuration = document.getElementById('liveDuration');
-        const historyList = document.getElementById('historyList');
-        const totalStats = document.getElementById('totalStats');
-        const startTimeCard = document.getElementById('startTimeCard');
-        const startTimeDisplay = document.getElementById('startTimeDisplay');
-        const customModal = document.getElementById('customModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalMessage = document.getElementById('modalMessage');
-        const modalButtons = document.getElementById('modalButtons');
-        const modalIcon = document.getElementById('modalIcon');
-        const userBadge = document.getElementById('userBadge');
-        const userNameDisplay = document.getElementById('userNameDisplay');
-        const usernameBox = document.getElementById('usernameBox');
-        const customUsernameInput = document.getElementById('customUsernameInput');
-
-        // Initialize App
-        checkLoginStatus();
-
-        function checkLoginStatus() {
-            if (currentUsername && currentUsername.trim() !== "") {
-                userNameDisplay.textContent = currentUsername;
-                userBadge.classList.remove('hidden');
-                usernameBox.classList.add('hidden');
-                listenToFirebaseHistory();
-            } else {
-                userBadge.classList.add('hidden');
-                usernameBox.classList.remove('hidden');
-                // ดึงข้อมูลออฟไลน์ชั่วคราว
-                history = JSON.parse(localStorage.getItem('meditationHistory')) || [];
-                renderHistory();
-            }
+        const safePath = convertEmailToPath(inputVal);
+        
+        // ตรวจสอบใน Firebase ว่ามีข้อมูลยูเซอร์นี้อยู่ไหม
+        try {
+            const snapshot = await database.ref(`meditation_users/${safePath}`).once('value');
+            
+            // ถ้าไม่มีข้อมูลในระบบ จะถือว่าเป็นผู้ใช้ใหม่ ระบบจะยอมให้เชื่อมต่อเพื่อสร้างประวัติใหม่
+            localStorage.setItem('user_display_email', inputVal);
+            localStorage.setItem('prayer_username', safePath);
+            rawEmail = inputVal;
+            
+            if (historyRef) historyRef.off();
+            checkLoginStatus();
+            showCustomAlert('เชื่อมต่อสำเร็จ', `ยินดีต้อนรับคุณ ${inputVal} ระบบพร้อมใช้งานแล้วจ้ะ`, '✅');
+        } catch (error) {
+            showCustomAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้', '❌');
         }
+    }
+
+    function checkLoginStatus() {
+        if (rawEmail) {
+            userNameDisplay.textContent = rawEmail;
+            userBadge.classList.remove('hidden');
+            usernameBox.classList.add('hidden');
+            listenToFirebaseHistory();
+        } else {
+            userBadge.classList.add('hidden');
+            usernameBox.classList.remove('hidden');
+        }
+    }
 
         function showNameInput() {
             usernameBox.classList.toggle('hidden');
