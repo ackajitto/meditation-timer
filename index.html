@@ -433,29 +433,33 @@
        function toggleTimer() {
             const toggleBtn = document.getElementById('toggleBtn');
             const startTimeCard = document.getElementById('startTimeCard');
-            const startTimeDisplay = document.getElementById('startTimeDisplay'); // ส่วนที่ต้องโชว์ 14:20
+            const startTimeDisplay = document.getElementById('startTimeDisplay');
             const statusIndicator = document.getElementById('statusIndicator');
             const timerStatus = document.getElementById('timerStatus');
             const liveDuration = document.getElementById('liveDuration');
-            
             const startInput = document.getElementById('manualStart');
 
             if (!isMeditating) {
                 isMeditating = true;
                 startTime = new Date();
                 
-                // --- ส่วนที่แก้ไข: สร้างรูปแบบเวลา HH:MM ให้ชัดเจน ---
+                // สร้างรูปแบบเวลา HH:MM
                 const hours = String(startTime.getHours()).padStart(2, '0');
                 const minutes = String(startTime.getMinutes()).padStart(2, '0');
                 const timeString = `${hours}:${minutes}`;
                 
-                // นำไปใส่ในช่อง Input และกล่องข้อความ
+                // ใส่ค่าเวลา
                 startInput.value = timeString;
-                startTimeDisplay.textContent = timeString; // ดึงข้อความนี้ไปแสดงในกรอบ
-                // ----------------------------------------------------
+                startTimeDisplay.textContent = timeString;
 
+                // --- ส่วนที่แก้ไข: เด้งขึ้นมาแบบนุ่มนวล ---
                 startTimeCard.classList.remove('hidden');
-                
+                // ใช้ setTimeout ให้ browser render 'hidden' ออกก่อน แล้วค่อยสั่งเลื่อน
+                setTimeout(() => {
+                    startTimeCard.classList.remove('opacity-0', 'translate-y-2');
+                }, 10);
+                // ------------------------------------
+
                 toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
                 toggleBtn.classList.replace('bg-teal-600', 'bg-sky-400');
                 statusIndicator.classList.add('breathing', 'bg-sky-100', 'text-sky-500');
@@ -474,7 +478,13 @@
                     showCustomAlert('แจ้งเตือน', 'เวลาสั้นเกินไป (น้อยกว่า 1 นาที) จะไม่ถูกบันทึก', '⏳');
                 }
 
-                startTimeCard.classList.add('hidden');
+                // --- ส่วนที่แก้ไข: เก็บกลับแบบนุ่มนวล ---
+                startTimeCard.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    startTimeCard.classList.add('hidden');
+                }, 300); // รอให้ transition ทำงานเสร็จก่อนค่อย display: none
+                // ------------------------------------
+
                 toggleBtn.textContent = 'เริ่มนั่งสมาธิ (เวลาปัจจุบัน)';
                 toggleBtn.classList.replace('bg-sky-400', 'bg-teal-600');
                 statusIndicator.classList.remove('breathing', 'bg-sky-100', 'text-sky-500');
