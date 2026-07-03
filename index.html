@@ -14,6 +14,8 @@
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- เพิ่ม SDK ของ Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
         body { font-family: 'Prompt', sans-serif; }
@@ -85,6 +87,31 @@
 
             <h1 class="text-3xl font-semibold text-slate-900 dark:text-white pt-2">Meditation Timer</h1>
             <p class="text-base text-slate-500 dark:text-slate-400">บันทึกเวลาแห่งความสงบของคุณ</p>
+
+            <!-- เพิ่มส่วนล็อกอิน Google -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-w-sm mx-auto mt-4 transition-colors duration-300">
+                <div id="loginSection" class="block">
+                    <p class="text-slate-500 dark:text-slate-400 mb-4 text-sm font-medium">เข้าสู่ระบบด้วย Google เพื่อซิงค์ข้อมูล</p>
+                    <button id="loginBtn" class="w-full bg-[#4285F4] hover:bg-[#357ae8] text-white font-medium py-3 px-4 rounded-xl shadow-sm transition duration-200 flex items-center justify-center gap-3 active:scale-95">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                            <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.111 4.114a5.617 5.617 0 0 1-5.617-5.617c0-3.102 2.515-5.617 5.617-5.617c1.46 0 2.784.557 3.791 1.468l3.111-3.111C18.91 3.722 15.82 2.4 12.24 2.4C6.88 2.4 2.4 6.88 2.4 12.24s4.48 9.84 9.84 9.84c5.72 0 9.84-4.043 9.84-9.84c0-.64-.077-1.32-.223-1.955H12.24z"/>
+                        </svg>
+                        ล็อกอินด้วย Google
+                    </button>
+                </div>
+
+                <div id="userSection" class="hidden">
+                    <img id="userPhoto" src="https://placehold.co/100x100" alt="รูปโปรไฟล์" class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-teal-500 shadow-sm">
+                    <p class="text-teal-600 dark:text-teal-400 text-xs font-semibold uppercase tracking-wider mb-1">บัญชีที่เชื่อมต่อ</p>
+                    <h3 id="userName" class="text-lg font-medium text-slate-800 dark:text-slate-200 mb-1">...</h3>
+                    <p id="userEmail" class="text-sm text-slate-500 dark:text-slate-400 mb-4">...</p>
+                    <button id="logoutBtn" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-medium py-2.5 px-4 rounded-xl transition duration-200 active:scale-95 text-sm">
+                        ออกจากระบบ (Logout)
+                    </button>
+                </div>
+                <div id="statusMsg" class="mt-4 text-xs font-semibold text-slate-400 hidden"></div>
+            </div>
+            <!-- สิ้นสุดส่วนล็อกอิน Google -->
         </header>
 
         <section class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 text-center space-y-8 transition-colors duration-300">
@@ -189,6 +216,21 @@
             firebase.initializeApp(firebaseConfig);
         }
         const database = firebase.database();
+        const auth = firebase.auth(); // เริ่มต้นการทำงานของ Auth
+
+        // ตั้งค่าการจดจำผู้ใช้แบบ LOCAL
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(() => console.log("ตั้งค่ารักษาสถานะล็อกอินแบบ Local สำเร็จ"))
+            .catch(error => showAuthStatus("เกิดข้อผิดพลาด: " + error.message, true));
+
+        // ฟังก์ชันสถานะสำหรับระบบล็อกอิน
+        function showAuthStatus(text, isError = false) {
+            const el = document.getElementById('statusMsg');
+            el.innerText = text;
+            el.style.display = 'block';
+            el.className = `mt-4 text-xs font-semibold ${isError ? 'text-rose-500' : 'text-teal-500'}`;
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
 
         // ตัวแปรสถานะ
         let isMeditating = false;
@@ -198,7 +240,75 @@
         let rawEmail = localStorage.getItem('user_display_email') || '';
         let historyRef = null;
 
-        // ตรวจสอบสถานะการล็อกอินทันทีที่โหลดหน้าเว็บ
+        // ตรวจสอบและจัดการ Auth เปลี่ยนแปลงของ Google
+        auth.onAuthStateChanged(user => {
+            const loginSection = document.getElementById('loginSection');
+            const userSection = document.getElementById('userSection');
+            
+            if (user) {
+                document.getElementById('userName').innerText = user.displayName || "ไม่ระบุชื่อ";
+                document.getElementById('userEmail').innerText = user.email || "";
+                document.getElementById('userPhoto').src = user.photoURL || "https://placehold.co/100x100";
+                
+                loginSection.style.display = 'none';
+                userSection.style.display = 'block';
+
+                // --- ผูกกับระบบจัดการผู้ใช้ของแอป Meditation Timer ---
+                rawEmail = user.email;
+                const safePath = convertEmailToPath(user.email);
+                localStorage.setItem('user_display_email', user.email);
+                localStorage.setItem('prayer_username', safePath);
+                
+                // ซ่อนการกรอกอีเมลแบบเก่า
+                document.getElementById('usernameBox').classList.add('hidden');
+                document.getElementById('userBadge').classList.add('hidden');
+
+                if (historyRef) historyRef.off();
+                listenToFirebaseHistory();
+                showAuthStatus("เข้าสู่ระบบเรียบร้อยแล้ว");
+            } else {
+                loginSection.style.display = 'block';
+                userSection.style.display = 'none';
+                
+                // เคลียร์ข้อมูลการเชื่อมต่อเมื่อไม่ได้ล็อกอิน (หรือออกจากระบบ)
+                if (localStorage.getItem('user_display_email')) {
+                    rawEmail = '';
+                    localStorage.removeItem('user_display_email');
+                    localStorage.removeItem('prayer_username');
+                    history = [];
+                    renderHistory();
+                    if (historyRef) historyRef.off();
+                }
+
+                // เรียก UI เดิมมาแสดงถ้าไม่ได้เชื่อมต่อ
+                checkLoginStatus();
+            }
+        });
+
+        // Event สำหรับปุ่ม Login ของ Google
+        document.getElementById('loginBtn').onclick = async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                showAuthStatus("กำลังเรียกหน้าล็อกอิน...");
+                await auth.signInWithPopup(provider);
+            } catch (error) {
+                console.error("Login Error:", error);
+                if (error.code === 'auth/web-storage-unsupported' || error.message.includes('sessionStorage')) {
+                    showAuthStatus("คำเตือน: โปรดเปิดหน้าเว็บนี้ใน Tab ใหม่โดยตรง", true);
+                } else {
+                    showAuthStatus("ล็อกอินไม่สำเร็จ: " + error.message, true);
+                }
+            }
+        };
+
+        // Event สำหรับปุ่ม Logout ของ Google
+        document.getElementById('logoutBtn').onclick = () => {
+            auth.signOut().then(() => {
+                showAuthStatus("ออกจากระบบแล้ว");
+            }).catch(error => showAuthStatus("เกิดข้อผิดพลาด: " + error.message, true));
+        };
+
+        // ตรวจสอบสถานะการล็อกอินทันทีที่โหลดหน้าเว็บ (สำหรับระบบเก่า)
         document.addEventListener("DOMContentLoaded", () => {
             checkLoginStatus();
         });
