@@ -430,18 +430,30 @@
             return result;
         }
 
-        function toggleTimer() {
+       function toggleTimer() {
             const toggleBtn = document.getElementById('toggleBtn');
             const startTimeCard = document.getElementById('startTimeCard');
-            const startTimeDisplay = document.getElementById('startTimeDisplay');
+            const startTimeDisplay = document.getElementById('startTimeDisplay'); // ส่วนที่ต้องโชว์ 14:20
             const statusIndicator = document.getElementById('statusIndicator');
             const timerStatus = document.getElementById('timerStatus');
             const liveDuration = document.getElementById('liveDuration');
+            
+            const startInput = document.getElementById('manualStart');
 
             if (!isMeditating) {
                 isMeditating = true;
                 startTime = new Date();
-                startTimeDisplay.textContent = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}`;
+                
+                // --- ส่วนที่แก้ไข: สร้างรูปแบบเวลา HH:MM ให้ชัดเจน ---
+                const hours = String(startTime.getHours()).padStart(2, '0');
+                const minutes = String(startTime.getMinutes()).padStart(2, '0');
+                const timeString = `${hours}:${minutes}`;
+                
+                // นำไปใส่ในช่อง Input และกล่องข้อความ
+                startInput.value = timeString;
+                startTimeDisplay.textContent = timeString; // ดึงข้อความนี้ไปแสดงในกรอบ
+                // ----------------------------------------------------
+
                 startTimeCard.classList.remove('hidden');
                 
                 toggleBtn.textContent = 'เลิกนั่งสมาธิ (บันทึกเวลา)';
